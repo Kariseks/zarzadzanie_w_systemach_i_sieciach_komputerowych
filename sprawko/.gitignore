@@ -1,0 +1,9 @@
+# 1. Ignoruj absolutnie wszystko
+*
+
+# 2. Nie ignoruj samego pliku .gitignore (opcjonalne, ale zalecane)
+!.gitignore
+
+# 3. Dodaj swoje wyjątki (pliki, które MAJĄ być śledzone)
+!sprawozdanie.tex
+!sprawozdanie.pdf
