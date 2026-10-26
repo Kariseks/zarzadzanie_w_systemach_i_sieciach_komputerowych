@@ -1,0 +1,186 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[polish]{babel}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+% Grafiki do sprawozdania wrzucać do katalogu zrzuty/
+\graphicspath{{zrzuty/}}
+
+\setlist[itemize]{topsep=0.35em,itemsep=0.2em,leftmargin=1.6em}
+\setlist[enumerate]{topsep=0.35em,itemsep=0.2em,leftmargin=1.6em}
+
+\newcommand{\kod}[1]{\texttt{#1}}
+
+\begin{document}
+
+%----------------------------------------------------------------------
+\begingroup
+	\centering
+	{\large\bfseries POLITECHNIKA WROCŁAWSKA\\[0.25em]
+	WYDZIAŁ INFORMATYKI I TELEKOMUNIKACJI\par}
+	\vspace{0.55em}
+	\rule{\textwidth}{0.9pt}
+
+	\vspace{2.6cm}
+	{\Large Zarządzanie w systemach i sieciach\\
+	komputerowych -- projekt\par}
+
+	\vspace{1.8cm}
+	{\large\bfseries Mechanizmy zarządzania wątkami programowymi\\
+	w zadaniu wykrywania krawędzi na obrazach cyfrowych\\
+	z wykorzystaniem operatorów gradientowych\\
+	(Sobela i pokrewnych)\par}
+
+	\vspace{2.6cm}
+	\begin{minipage}[t]{0.48\textwidth}
+		\raggedright
+		AUTOR:\\[0.35em]
+		Karol Gąsior\\
+		Indeks: 280913\\
+		E-mail:
+	\end{minipage}%
+	\begin{minipage}[t]{0.48\textwidth}
+		\raggedright
+		PROWADZĄCY ZAJĘCIA:\\[0.35em]
+		Dr inż. Robert Wójcik, W4N
+	\end{minipage}
+
+	\vspace{2.2cm}
+	OCENA PRACY:
+
+	\vfill
+	\rule{\textwidth}{0.9pt}\\[0.7em]
+	Wrocław, 2026\par
+\endgroup
+\thispagestyle{empty}
+\clearpage
+
+%----------------------------------------------------------------------
+\noindent
+\begin{minipage}[t]{0.55\textwidth}
+	Karol Gąsior\\
+	Indeks ......\\
+	Grupa ......
+\end{minipage}%
+\begin{minipage}[t]{0.45\textwidth}
+	\raggedleft
+	Wrocław, 19-10-2026 r.
+\end{minipage}
+
+\vspace{1.4em}
+\begin{center}
+	\large Opis założeń projektu
+\end{center}
+
+\section{Temat i cel projektu}
+
+Temat: Mechanizmy zarządzania wątkami programowymi w zadaniu wykrywania krawędzi na obrazach cyfrowych z wykorzystaniem operatorów gradientowych (Sobela i pokrewnych).
+
+Cel projektu: projekt oraz implementacja programu wykrywającego krawędzie na obrazie wczytywanym z dysku, w którym obliczenia rozdzielane są pomiędzy dowolną, zadaną przez użytkownika liczbę wątków. Za podział pracy odpowiadać będzie wbudowany mechanizm szeregujący (\emph{scheduler}) oferujący kilka strategii przydziału fragmentów obrazu. Dodatkowym celem jest zbadanie, jak liczba wątków, strategia szeregowania oraz rozmiar przydzielanego fragmentu wpływają na czas przetwarzania (zegarowy i procesora) oraz na zużycie pamięci operacyjnej.
+
+\section{Sformułowanie problemu}
+
+Problem wykrywania krawędzi będzie rozwiązywany przy uwzględnieniu następujących założeń:
+\begin{itemize}
+	\item obraz wejściowy (\kod{input.jpg}) wczytywany jest z dysku i od razu konwertowany do skali szarości (8~bitów na piksel);
+	\item cały obraz mieści się w pamięci operacyjnej i jest przetwarzany w niej w całości;
+	\item użytkownik wybiera jedną z dostępnych masek: Sobel \(3 \times 3\), Sobel \(5 \times 5\), Prewitt \(3 \times 3\), Scharr \(3 \times 3\) oraz krzyż Robertsa \cite{gonzalez,tadeusiewicz};
+	\item piksele leżące poza brzegiem obrazu zastępowane są najbliższym pikselem brzegowym (powielenie krawędzi);
+	\item wynikiem jest moduł gradientu znormalizowany do zakresu 0--255 i zapisany do pliku \kod{output.jpg};
+	\item najmniejszą jednostką podziału pracy pomiędzy wątki jest wiersz obrazu;
+	\item liczba wątków, strategia szeregowania i rozmiar fragmentu są parametrami programu;
+	\item program działa wyłącznie w trybie tekstowym (terminal), bez interfejsu graficznego.
+\end{itemize}
+
+Problem obliczeniowy \cite{gonzalez,tadeusiewicz}: dla obrazu \(I\) o wymiarach \(W \times H\) oraz pary masek \(K_x\), \(K_y\) o rozmiarze \(k \times k\) wyznaczyć dla każdego piksela wartość
+\begin{equation}
+	G(x, y) = \sqrt{G_x(x, y)^{2} + G_y(x, y)^{2}},
+	\quad G_x = K_x * I,
+	\quad G_y = K_y * I,
+\end{equation}
+gdzie \(*\) oznacza dwuwymiarowy splot dyskretny.
+
+Problem badawczy (optymalizacyjny) \cite{williams,openmp}: dobrać liczbę wątków \(N\), strategię szeregowania oraz rozmiar fragmentu tak, aby zapewnić optymalne wartości następujących kryteriów:
+\begin{itemize}
+	\item czas zegarowy przetwarzania obrazu -- minimum;
+	\item efektywność zrównoleglenia \(E(N) = S(N)/N\), gdzie \(S(N) = T(1)/T(N)\) -- maksimum;
+	\item nierównomierność obciążenia wątków (różnica czasów zakończenia pracy) -- minimum;
+	\item dodatkowe zużycie pamięci RAM związane z wielowątkowością -- minimum.
+\end{itemize}
+
+\section{Analiza złożoności obliczeniowej problemu}
+
+Złożoność obliczeniowa splotu wynosi \(O(W \cdot H \cdot k^{2})\), a więc dla ustalonej maski zależy liniowo od liczby pikseli obrazu. Złożoność pamięciowa wynosi \(O(W \cdot H)\) -- program przechowuje obraz wejściowy (1~bajt na piksel), mapę modułu gradientu (4~bajty na piksel) oraz obraz wyjściowy (1~bajt na piksel), czyli około 6~bajtów na piksel.
+
+Wartość każdego piksela wyniku zależy wyłącznie od jego otoczenia w obrazie wejściowym, dlatego zadanie należy do klasy problemów łatwo zrównoleglanych (\emph{embarrassingly parallel}) i teoretycznie umożliwia przyspieszenie liniowe względem liczby rdzeni. W praktyce przyspieszenie ograniczają: część sekwencyjna programu (dekodowanie i kodowanie JPG, redukcja maksimum), narzut synchronizacji oraz przepustowość pamięci. Górne ograniczenie przyspieszenia opisuje prawo Amdahla \cite{amdahl}:
+\begin{equation}
+	S(N) \le \frac{1}{(1 - p) + \dfrac{p}{N}},
+\end{equation}
+gdzie \(p\) oznacza udział części programu, którą można wykonywać równolegle.
+
+\section{Metoda i algorytmy rozwiązywania problemu}
+
+Zastosowana zostanie dekompozycja danych: obraz dzielony jest na fragmenty złożone z kolejnych wierszy, a każdy wątek przetwarza otrzymane fragmenty niezależnie, zapisując wyniki do rozłącznych obszarów pamięci, co eliminuje potrzebę stosowania blokad. Przetwarzanie przebiega w dwóch etapach rozdzielonych barierą:
+\begin{enumerate}
+	\item splot z maską oraz wyznaczenie lokalnego maksimum gradientu w każdym wątku;
+	\item redukcja lokalnych maksimów do maksimum globalnego, a następnie równoległa normalizacja wyniku do zakresu 0--255.
+\end{enumerate}
+
+Wątki tworzone są jednokrotnie i utrzymywane w puli (\emph{thread pool}), dzięki czemu kolejne etapy nie ponoszą kosztu ich ponownego tworzenia. Przydziałem fragmentów obrazu zarządza scheduler oferujący strategie wzorowane na klauzuli \emph{schedule} standardu OpenMP \cite{openmp}:
+\begin{itemize}
+	\item \emph{static} -- obraz dzielony na \(N\) równych bloków, po jednym na wątek;
+	\item \emph{cyclic} -- fragmenty o stałej wielkości przydzielane cyklicznie (round-robin);
+	\item \emph{dynamic} -- wolny wątek pobiera kolejny fragment ze wspólnej kolejki (licznik atomowy);
+	\item \emph{guided} -- jak \emph{dynamic}, lecz rozmiar fragmentów maleje wraz z ilością pozostałej pracy.
+\end{itemize}
+
+\section{Metoda, technologie i narzędzia implementacji}
+
+Program zostanie napisany w języku C++ (standard C++17) z wykorzystaniem biblioteki STL, w szczególności mechanizmów wielowątkowości: \kod{std::thread}, \kod{std::mutex}, \kod{std::condition\_variable} oraz \kod{std::atomic} \cite{williams,cppreference}. Odczyt i zapis plików JPG zrealizowany zostanie przy użyciu jednoplikowych bibliotek \kod{stb\_image} i \kod{stb\_image\_write} \cite{stb}. Projekt będzie budowany za pomocą CMake i realizowany w środowisku Qt Creator (bez wykorzystania bibliotek Qt). Logika przetwarzania zostanie zamknięta w klasie \kod{EdgeDetector}, której parametrami są liczba wątków, strategia szeregowania oraz rozmiar fragmentu.
+
+\section{Sposób testowania i oceny jakości rozwiązań}
+
+Poprawność działania zostanie zweryfikowana poprzez porównanie wyników wersji wielowątkowej z wynikiem wersji jednowątkowej -- obrazy wyjściowe muszą być identyczne niezależnie od liczby wątków i strategii szeregowania. Testy przeprowadzone zostaną na obrazach syntetycznych o znanym położeniu krawędzi oraz na zdjęciach rzeczywistych.
+
+Ocena wydajności obejmie pomiar dla każdego etapu (wczytanie, splot, normalizacja, zapis): czasu zegarowego -- przy użyciu biblioteki \kod{chrono} STL \cite{cppreference}, czasu procesora całego procesu oraz poszczególnych wątków, a także bieżącego i szczytowego zużycia pamięci RAM (funkcje systemowe Windows i Linux). Wbudowany tryb porównawczy wykona przetwarzanie dla \(1, 2, 4, \ldots, N\) wątków z kilkukrotnym powtórzeniem pomiaru i wyznaczy przyspieszenie oraz efektywność. Badania zostaną przeprowadzone dla obrazów o różnej rozdzielczości (od HD do 8K), różnych masek, strategii szeregowania i rozmiarów fragmentu.
+
+W aplikacji nie przewiduje się interfejsu graficznego. Wyniki pomiarów będą wypisywane w terminalu oraz zapisywane do plików tekstowych, a następnie analizowane. W celu wizualnej prezentacji wyników badań przedstawione zostaną odpowiednie wykresy.
+
+% Przykład wstawienia grafiki z katalogu zrzuty/ (odkomentować po dodaniu pliku):
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.85\textwidth]{nazwa.png}
+%   \caption{Opis rysunku.}
+% \end{figure}
+
+\begin{thebibliography}{9}
+	\bibitem{gonzalez}
+	Gonzalez R.~C., Woods R.~E., \emph{Digital Image Processing}, 4th ed., Pearson, 2018.
+
+	\bibitem{tadeusiewicz}
+	Tadeusiewicz R., Korohoda P., \emph{Komputerowa analiza i przetwarzanie obrazów}, Wydawnictwo Fundacji Postępu Telekomunikacji, Kraków, 1997.
+
+	\bibitem{williams}
+	Williams A., \emph{C++ Concurrency in Action}, 2nd ed., Manning, 2019.
+
+	\bibitem{openmp}
+	OpenMP Architecture Review Board, \emph{OpenMP Application Programming Interface}, Version 5.2, 2021.
+
+	\bibitem{amdahl}
+	Amdahl G.~M., \emph{Validity of the single processor approach to achieving large scale computing capabilities}, AFIPS Conference Proceedings, vol.~30, 1967.
+
+	\bibitem{cppreference}
+	\url{https://en.cppreference.com/w/cpp/thread}, 19.10.2026.
+
+	\bibitem{stb}
+	\url{https://github.com/nothings/stb}, 19.10.2026.
+\end{thebibliography}
+
+\end{document}
