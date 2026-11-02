@@ -8,6 +8,7 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{enumitem}
+\usepackage{tikz}
 \usepackage[hidelinks]{hyperref}
 
 % Grafiki do sprawozdania wrzucać do katalogu zrzuty/
@@ -20,64 +21,80 @@
 
 \begin{document}
 
-%----------------------------------------------------------------------
-\begingroup
-	\centering
-	{\large\bfseries POLITECHNIKA WROCŁAWSKA\\[0.25em]
-	WYDZIAŁ INFORMATYKI I TELEKOMUNIKACJI\par}
-	\vspace{0.55em}
-	\rule{\textwidth}{0.9pt}
-
-	\vspace{2.6cm}
-	{\Large Zarządzanie w systemach i sieciach\\
-	komputerowych -- projekt\par}
-
-	\vspace{1.8cm}
-	{\large\bfseries Mechanizmy zarządzania wątkami programowymi\\
-	w zadaniu wykrywania krawędzi na obrazach cyfrowych\\
-	z wykorzystaniem operatorów gradientowych\\
-	(Sobela i pokrewnych)\par}
-
-	\vspace{2.6cm}
-	\begin{minipage}[t]{0.48\textwidth}
-		\raggedright
-		AUTOR:\\[0.35em]
-		Karol Gąsior\\
-		Indeks: 280913\\
-		E-mail:
-	\end{minipage}%
-	\begin{minipage}[t]{0.48\textwidth}
-		\raggedright
-		PROWADZĄCY ZAJĘCIA:\\[0.35em]
-		Dr inż. Robert Wójcik, W4N
-	\end{minipage}
-
-	\vspace{2.2cm}
-	OCENA PRACY:
-
-	\vfill
-	\rule{\textwidth}{0.9pt}\\[0.7em]
-	Wrocław, 2026\par
-\endgroup
+% Strona tytułowa jak w strona_tyt_zssk.pdf (Times).
+% Bold: nagłówek i temat. Bez bolda: nazwa przedmiotu (24 pt) i etykiety.
 \thispagestyle{empty}
+\mbox{}%
+\begin{tikzpicture}[remember picture, overlay]
+	\draw[line width=1.15pt]
+		([xshift=97.8pt, yshift=-124.8pt]current page.north west)
+		-- ([xshift=528.8pt, yshift=-124.8pt]current page.north west);
+	\draw[line width=1.15pt]
+		([xshift=97.8pt, yshift=-721.2pt]current page.north west)
+		-- ([xshift=528.8pt, yshift=-721.2pt]current page.north west);
+
+	\node[anchor=base, inner sep=0]
+		at ([xshift=313.3pt, yshift=-89.5pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{20.04}{23.1}\selectfont\bfseries\scshape Politechnika Wrocławska};
+	\node[anchor=base, inner sep=0]
+		at ([xshift=313.3pt, yshift=-112.6pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{20.04}{23.1}\selectfont\bfseries\scshape Wydział Informatyki i Telekomunikacji};
+
+	\node[anchor=base, inner sep=0]
+		at ([xshift=313.3pt, yshift=-272.7pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{24}{27.6}\selectfont\mdseries\upshape Zarządzanie w systemach i sieciach};
+	\node[anchor=base, inner sep=0]
+		at ([xshift=313.3pt, yshift=-300.3pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{24}{27.6}\selectfont\mdseries\upshape komputerowych - projekt};
+
+	\node[anchor=base, inner sep=0]
+		at ([xshift=313.3pt, yshift=-386.4pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{20.04}{23.1}\selectfont\bfseries\upshape Mechanizmy zarządzania wątkami programowymi};
+	\node[anchor=base, inner sep=0]
+		at ([xshift=313.3pt, yshift=-409.5pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{20.04}{23.1}\selectfont\bfseries\upshape w zadaniu wykrywania krawędzi na obrazach};
+	\node[anchor=base, inner sep=0]
+		at ([xshift=313.3pt, yshift=-432.6pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{20.04}{23.1}\selectfont\bfseries\upshape cyfrowych z wykorzystaniem operatorów};
+	\node[anchor=base, inner sep=0]
+		at ([xshift=313.3pt, yshift=-455.7pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{20.04}{23.1}\selectfont\bfseries\upshape gradientowych };
+
+	\node[anchor=base west, inner sep=0]
+		at ([xshift=99.3pt, yshift=-541pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{15.96}{18}\selectfont\mdseries\scshape Autorzy:};
+	\node[anchor=base west, inner sep=0]
+		at ([xshift=99.3pt, yshift=-563.6pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{14.04}{16}\selectfont Karol Gąsior};
+	\node[anchor=base west, inner sep=0]
+		at ([xshift=99.3pt, yshift=-577.1pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{11.04}{13}\selectfont Indeks: 280913};
+	\node[anchor=base west, inner sep=0]
+		at ([xshift=99.3pt, yshift=-599pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{14.04}{16}\selectfont Mateusz Kunicki};
+	\node[anchor=base west, inner sep=0]
+		at ([xshift=99.3pt, yshift=-612.5pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{11.04}{13}\selectfont Indeks: 272468};
+
+	\node[anchor=base west, inner sep=0]
+		at ([xshift=287.1pt, yshift=-541pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{15.96}{18}\selectfont\mdseries\scshape Prowadzący zajęcia:};
+	\node[anchor=base west, inner sep=0]
+		at ([xshift=287.1pt, yshift=-563.6pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{14.04}{16}\selectfont Dr inż.\ Robert Wójcik, W4N};
+
+	\node[anchor=base west, inner sep=0]
+		at ([xshift=287.1pt, yshift=-640.4pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{15.96}{18}\selectfont\mdseries\scshape Ocena pracy:};
+
+	\node[anchor=base, inner sep=0]
+		at ([xshift=313.3pt, yshift=-742.4pt]current page.north west)
+		{\fontfamily{qtm}\fontsize{14.04}{16}\selectfont Wrocław, 2026};
+\end{tikzpicture}
 \clearpage
 
 %----------------------------------------------------------------------
-\noindent
-\begin{minipage}[t]{0.55\textwidth}
-	Karol Gąsior\\
-	Indeks ......\\
-	Grupa ......
-\end{minipage}%
-\begin{minipage}[t]{0.45\textwidth}
-	\raggedleft
-	Wrocław, 19-10-2026 r.
-\end{minipage}
 
-\vspace{1.4em}
-\begin{center}
-	\large Opis założeń projektu
-\end{center}
 
 \section{Temat i cel projektu}
 
@@ -89,7 +106,7 @@ Cel projektu: projekt oraz implementacja programu wykrywającego krawędzie na o
 
 Problem wykrywania krawędzi będzie rozwiązywany przy uwzględnieniu następujących założeń:
 \begin{itemize}
-	\item obraz wejściowy (\kod{input.jpg}) wczytywany jest z dysku i od razu konwertowany do skali szarości (8~bitów na piksel);
+	\item obraz wejściowy wczytywany jest z dysku i od razu konwertowany do skali szarości (8~bitów na piksel);
 	\item cały obraz mieści się w pamięci operacyjnej i jest przetwarzany w niej w całości;
 	\item użytkownik wybiera jedną z dostępnych masek: Sobel \(3 \times 3\), Sobel \(5 \times 5\), Prewitt \(3 \times 3\), Scharr \(3 \times 3\) oraz krzyż Robertsa \cite{gonzalez,tadeusiewicz};
 	\item piksele leżące poza brzegiem obrazu zastępowane są najbliższym pikselem brzegowym (powielenie krawędzi);
