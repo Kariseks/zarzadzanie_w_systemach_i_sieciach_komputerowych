@@ -2,7 +2,7 @@
 
 Cel: sprawdzić, jakie optymalizacje zaproponuje ogólnodostępny model AI, gdy dostanie kod V0
 i proste polecenie, oraz porównać wynik z ręcznie przygotowanymi wariantami V1–V8.
-Prowadzący dopuszcza takie porównanie (`materialy/projekt_zssk_2024.pdf`).
+Prowadzący dopuszcza takie porównanie (`materialy/projekt/projekt_zssk_2024.pdf`).
 
 Żeby eksperyment był uczciwy:
 

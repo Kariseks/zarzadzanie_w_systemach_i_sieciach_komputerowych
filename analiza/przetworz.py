@@ -65,7 +65,7 @@ def ustaw_styl(slajdy: bool = False) -> None:
         "font.size": 9,
         "axes.titlesize": 9,
         "axes.labelsize": 9,
-        "legend.fontsize": 7.5,
+        "legend.fontsize": 8,
         "xtick.labelsize": 8,
         "ytick.labelsize": 8,
         "axes.grid": True,
@@ -102,7 +102,23 @@ def legenda_pod(fig, ax=None, ncol: int = 4, uchwyty=None) -> None:
     for a in fig.axes:
         if a.get_legend():
             a.get_legend().remove()
-    fig.legend(h, l, loc="upper center", bbox_to_anchor=(0.5, 0.0), ncol=ncol, fontsize=7)
+    fig.legend(h, l, loc="upper center", bbox_to_anchor=(0.5, 0.0), ncol=ncol)
+
+
+def pionowo(n: int, wys_panelu: float, sharex: bool = False):
+    """Panele jeden pod drugim na pełną szerokość strony.
+
+    Reguła (skill prezentacja-wynikow, p. 6): panele z różnymi skalami osi X albo z długimi
+    podpisami kategorii idą pod sobą, a nie obok siebie – każdy dostaje całą szerokość tekstu,
+    a przy wspólnej osi X (sharex) wartości z różnych paneli leżą na tej samej pionowej linii.
+    """
+    fig, osie = plt.subplots(n, 1, figsize=(SZER, n * wys_panelu), sharex=sharex, squeeze=False)
+    return fig, list(osie[:, 0])
+
+
+def tytul_panelu(ax, tekst: str) -> None:
+    """Krótki tytuł panelu wyrównany do lewej (nazwa podzbioru danych, nie opis rysunku)."""
+    ax.set_title(tekst, loc="left", fontsize=plt.rcParams["axes.labelsize"])
 
 
 def styl(i: int) -> dict:
@@ -352,7 +368,7 @@ def slupki_wersji(ax, d: pd.DataFrame, baza: float, log: bool | None = None) -> 
         ax.set_xscale("log")
         ax.set_xlim(d["min"].min() / 1.6, d["max"].max() * 12)
     else:
-        ax.set_xlim(0, d["max"].max() * 1.55)
+        ax.set_xlim(0, d["max"].max() * 1.32)
     ax.grid(axis="y", visible=False)
     os_przecinek(ax, os_y=False)
 
@@ -362,26 +378,29 @@ def e1(ex: Eksperyment, out: Wyjscie) -> None:
     a = agreguj(ex.res)
     for mk in sorted(set(a["mask"])):
         obr = [o for o in (obraz_wybierz(a, "1920x1080"), obraz_wybierz(a, "3840x2160"), obraz_wybierz(a, "7680x4320")) if o]
-        fig, osie = plt.subplots(1, len(obr), figsize=(SZER, WYS * 0.95), squeeze=False, sharey=True)
-        for ax, o in zip(osie[0], obr):
+        fig, osie = pionowo(len(obr), 3.8 * CM)
+        for ax, o in zip(osie, obr):
             d = a[(a["mask"] == mk) & (a["image"] == o)]
             baza = d[d["variant"] == "W1"]["mediana"].iloc[0]
-            slupki_wersji(ax, d, baza)
-            ax.set_title(etykieta_obrazu(o), fontsize=plt.rcParams["axes.labelsize"])
-            ax.set_xlabel("czas [ms]")
-        fig.tight_layout()
+            slupki_wersji(ax, d, baza, log=False)
+            tytul_panelu(ax, etykieta_obrazu(o))
+        osie[-1].set_xlabel("czas [ms]")
+        fig.tight_layout(h_pad=0.6)
         out.zapisz_rys(fig, f"e1_wersje_{mk}", "E1")
 
     # Ta sama wersja, dwie maski: ranking się zmienia
     o4 = obraz_wybierz(a, "3840x2160")
     if o4 and len(set(a["mask"])) > 1:
-        fig, osie = plt.subplots(1, 2, figsize=(SZER, WYS * 0.95), squeeze=False, sharey=True)
-        for ax, mk in zip(osie[0], ["sobel3", "sobel7"]):
+        # wspólna oś X (log): słupek 3×3 i 7×7 tej samej wersji można porównać wprost
+        fig, osie = pionowo(2, 3.8 * CM, sharex=True)
+        dd = a[(a["image"] == o4) & a["mask"].isin(["sobel3", "sobel7"])]
+        for ax, mk in zip(osie, ["sobel3", "sobel7"]):
             d = a[(a["mask"] == mk) & (a["image"] == o4)]
             slupki_wersji(ax, d, d[d["variant"] == "W1"]["mediana"].iloc[0], log=True)
-            ax.set_title(f"{nazwa_maski(mk)}, obraz 4K", fontsize=plt.rcParams["axes.labelsize"])
-            ax.set_xlabel("czas [ms] (skala log.)")
-        fig.tight_layout()
+            ax.set_xlim(dd["min"].min() / 1.6, dd["max"].max() * 6)
+            tytul_panelu(ax, f"{nazwa_maski(mk)}, obraz 4K")
+        osie[-1].set_xlabel("czas [ms] (skala logarytmiczna)")
+        fig.tight_layout(h_pad=0.6)
         out.zapisz_rys(fig, "e1_wersje_maski", "E1")
 
     # Tabela + makra
@@ -429,8 +448,8 @@ def e1b(ex: Eksperyment, out: Wyjscie) -> None:
     for mk in sorted(set(a["mask"])):
         obr = list(dict.fromkeys(a[a["mask"] == mk].sort_values("width")["image"]))
         obr = [o for o in obr if "x" in Path(o).stem] or obr
-        fig, osie = plt.subplots(1, len(obr), figsize=(SZER, WYS * 0.95), squeeze=False, sharey=True)
-        for ax, o in zip(osie[0], obr):
+        fig, osie = pionowo(len(obr), 3.8 * CM)
+        for ax, o in zip(osie, obr):
             d = a[(a["mask"] == mk) & (a["image"] == o)].set_index("variant").reindex(WERSJE).dropna(how="all")
             y = np.arange(len(d))[::-1]
             lewo = np.zeros(len(d))
@@ -444,15 +463,13 @@ def e1b(ex: Eksperyment, out: Wyjscie) -> None:
                 ax.text(x["wall_ms"] * 1.01, yi, f" {liczba(x['wall_ms'])} ms (×{liczba(b / x['wall_ms'])})", va="center",
                         fontsize=plt.rcParams["legend.fontsize"])
             ax.set_yticks(y, [OPIS_W[v] for v in d.index])
-            for t, v in zip(ax.get_yticklabels(), d.index):
-                t.set_color(STYL_W[v]["color"])
-            ax.set_xlim(0, d["wall_ms"].max() * 1.45)
-            ax.set_xlabel("czas [ms]")
-            ax.set_title(etykieta_obrazu(o) + (" (JPG)" if o.endswith(".jpg") else ""), fontsize=plt.rcParams["axes.labelsize"])
+            ax.set_xlim(0, d["wall_ms"].max() * 1.3)
+            tytul_panelu(ax, etykieta_obrazu(o) + (", plik JPG" if o.endswith(".jpg") else ""))
             ax.grid(axis="y", visible=False)
             os_przecinek(ax, os_y=False)
-        fig.tight_layout()
-        legenda_pod(fig, osie[0][0], ncol=3)
+        osie[-1].set_xlabel("czas [ms]")
+        fig.tight_layout(h_pad=0.6)
+        legenda_pod(fig, osie[0], ncol=3)
         out.zapisz_rys(fig, f"e1b_calosc_{mk}", "E1b")
 
     wiersze = []
@@ -496,7 +513,7 @@ def _rozklad_wersji(ex: Eksperyment, out: Wyjscie) -> None:
                 continue
             proc = wart / razem * 100
             ax.barh(yi, proc, 0.6, left=lewo, color=kolor, hatch=hatch, edgecolor="white", linewidth=0.4, label=nazwa)
-            if proc >= 8:
+            if proc >= 12:
                 ax.text(lewo + proc / 2, yi, f"{liczba(proc, 0)}%", ha="center", va="center", fontsize=fs * 0.9,
                         color="white" if kolor in ciemne else "black")
             lewo += proc
@@ -508,7 +525,7 @@ def _rozklad_wersji(ex: Eksperyment, out: Wyjscie) -> None:
             if d.empty:
                 continue
             kol = STYL_W[v]["color"]
-            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(SZER, WYS * 0.85))
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(SZER, WYS * 0.9), sharey=True)
             y = np.arange(len(d))[::-1]
             etyk = [etykieta_obrazu(o) + (" (JPG)" if o.endswith(".jpg") else "") for o in d["image"]]
             for yi, (_, x) in zip(y, d.iterrows()):
@@ -533,15 +550,15 @@ def _rozklad_wersji(ex: Eksperyment, out: Wyjscie) -> None:
                 ax.set_xlim(0, 125)
                 ax.set_xticks([0, 25, 50, 75, 100])
                 ax.set_xlabel("udział w czasie [%]")
-                ax.set_title(f"{OPIS_W[v]}: {tyt}", fontsize=plt.rcParams["axes.labelsize"])
+                tytul_panelu(ax, f"{OPIS_W[v]}: {tyt}")
                 ax.grid(axis="y", visible=False)
                 os_przecinek(ax, os_y=False)
-            ax2.set_yticklabels([])
+            ax2.tick_params(axis="y", labelleft=False)
             fig.tight_layout()
             h1, l1 = ax1.get_legend_handles_labels()
             h2, l2 = ax2.get_legend_handles_labels()
             uniq = dict(zip(l1 + l2, h1 + h2))
-            legenda_pod(fig, uchwyty=(list(uniq.values()), list(uniq.keys())), ncol=3)
+            legenda_pod(fig, uchwyty=(list(uniq.values()), list(uniq.keys())), ncol=2)
             out.zapisz_rys(fig, f"e1b_rozklad_{v}_{mk}", "E1b")
             for _, x in d.iterrows():
                 k = f"e1b/{v}/{klucz_obrazu(x['image'])}/{mk}"
@@ -587,12 +604,13 @@ def e2(ex: Eksperyment, out: Wyjscie) -> None:
             out.m(f"e2/{v}/wzrost-3-7", d[7] / d[3])
 
 
-def _linie_topologii(ax, maks: int = 48) -> None:
+def _linie_topologii(ax, maks: int = 48, podpis: bool = True) -> None:
     for n, opis in ((6, "6 = 1 CCD"), (12, "12 = rdzenie fizyczne"), (24, "24 = wątki SMT")):
         if n <= maks:
             ax.axvline(n, color="#999", linewidth=0.6, linestyle=":")
-            ax.text(n + 0.4, 0.03, opis, rotation=90, fontsize=plt.rcParams["legend.fontsize"] * 0.85, color="#666",
-                    va="bottom", ha="left", transform=ax.get_xaxis_transform())
+            if podpis:
+                ax.text(n + 0.5, 0.97, opis, rotation=90, fontsize=plt.rcParams["legend.fontsize"] * 0.9, color="#555",
+                        va="top", ha="left", transform=ax.get_xaxis_transform())
 
 
 def e3(ex: Eksperyment, out: Wyjscie) -> None:
@@ -600,13 +618,15 @@ def e3(ex: Eksperyment, out: Wyjscie) -> None:
     a = agreguj(ex.res)
     obr = list(dict.fromkeys(a.sort_values("mpix")["image"]))
     nmax = int(a["threads"].max())
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(SZER, WYS))
+    fig, (ax1, ax2) = pionowo(2, 5.0 * CM, sharex=True)
     NN = np.linspace(1, nmax, 200)
     ax1.plot(NN, NN, color="#999", linewidth=0.8, linestyle="--", label="idealne S = N")
     wiersze = []
+    smax = 1.0
     for i, o in enumerate(obr):
         d = a[a["image"] == o].sort_values("threads")
         t1 = d[d["threads"] == 1]["mediana"].iloc[0]
+        smax = max(smax, float((t1 / d["mediana"]).max()))
         d = d.assign(S=t1 / d["mediana"], E=t1 / d["mediana"] / d["threads"])
         fit = d[d["threads"] <= 24]
         s = dopasuj_amdahla(fit["threads"], fit["S"])
@@ -631,16 +651,15 @@ def e3(ex: Eksperyment, out: Wyjscie) -> None:
         wiersze.append([tex_escape(etykieta_obrazu(o)), liczba_tex(t1), liczba_tex(r12.iloc[0]) if len(r12) else "–",
                         liczba_tex(r24.iloc[0]) if len(r24) else "–", f"{liczba_tex(best['S'])} ({int(best['threads'])})",
                         liczba_tex(s * 100, 1)])
-    ax1.set_xlabel("liczba wątków N")
-    ax1.set_ylabel("przyspieszenie S(N) = T(1)/T(N)")
-    ax1.set_ylim(0, 25)
+    ax1.set_ylabel("przyspieszenie S(N)")
+    ax1.set_ylim(0, smax * 1.45)
     ax2.set_xlabel("liczba wątków N")
-    ax2.set_ylabel("efektywność E(N) = S(N)/N")
+    ax2.set_ylabel("efektywność E(N)")
     ax2.set_ylim(0, 1.1)
-    for ax in (ax1, ax2):
-        _linie_topologii(ax, nmax)
+    for ax, pod in ((ax1, True), (ax2, False)):
+        _linie_topologii(ax, nmax, podpis=pod)
         os_przecinek(ax)
-    fig.tight_layout()
+    fig.tight_layout(h_pad=0.5)
     legenda_pod(fig, ax1, ncol=3)
     out.zapisz_rys(fig, "e3_skalowanie", "E3")
     out.zapisz_tab("e3_watki", tabela(["Obraz", "T(1) [ms]", "S(12)", "S(24)", "maks. S (N)", "s [\\%]"], wiersze))
@@ -664,7 +683,7 @@ def e4(ex: Eksperyment, out: Wyjscie) -> None:
             ax.errorbar(d["chunk"], d["mediana"], yerr=[d["mediana"] - d["min"], d["max"] - d["mediana"]], capsize=1.5, label=h, **styl_inny(i))
         ax.set_xscale("log", base=2)
         ax.set_xlabel("rozmiar fragmentu [wiersze]")
-        ax.set_title(f"{n} wątków", fontsize=plt.rcParams["axes.labelsize"])
+        tytul_panelu(ax, f"{n} wątków")
         os_przecinek(ax)
     osie[0][0].set_ylabel("czas [ms]")
     fig.tight_layout()
@@ -673,7 +692,8 @@ def e4(ex: Eksperyment, out: Wyjscie) -> None:
     for n in nn:
         d = a[a["threads"] == n]
         best, worst = d.loc[d["mediana"].idxmin()], d.loc[d["mediana"].idxmax()]
-        opis = lambda x: x["schedule"] + ("" if x["schedule"] == "static" else f", {int(x['chunk'])} w.")
+        opis = lambda x: (r"\emph{" + x["schedule"] + "}") + ("" if x["schedule"] == "static" else
+                         f" z fragmentem {int(x['chunk'])} {'wiersza' if int(x['chunk']) == 1 else 'wierszy'}")
         out.m(f"e4/t{n}/najlepszy", opis(best))
         out.m(f"e4/t{n}/najlepszy-czas", best["mediana"])
         out.m(f"e4/t{n}/najgorszy", opis(worst))
@@ -699,8 +719,8 @@ def e5(ex: Eksperyment, out: Wyjscie) -> None:
     # (a) etapy W5 dla 4K – słupki skumulowane na skali LINIOWEJ (na log proporcje odcinków byłyby fałszywe);
     #     odniesienie: W4 (najszybsza wersja CPU); W1 jest na rysunku E1
     maski = [m for m in ["sobel3", "sobel7"] if m in set(med["mask"])]
-    fig, osie = plt.subplots(1, len(maski), figsize=(SZER, WYS * 0.85), squeeze=False, sharey=True)
-    for ax, mk in zip(osie[0], maski):
+    fig, osie = pionowo(len(maski), 2.9 * CM)
+    for ax, mk in zip(osie, maski):
         d = med[(med["image"] == o4) & (med["mask"] == mk)]
         d = pd.concat([d[d["variant"] == "W4"], d[d["variant"] == "W5"].sort_values("gpu_prec")])
         y = np.arange(len(d))[::-1]
@@ -716,14 +736,14 @@ def e5(ex: Eksperyment, out: Wyjscie) -> None:
                 st = STYL_W[x["variant"]]
                 ax.barh(yi, x["wall_ms"], 0.62, color=st["color"], hatch=st["hatch"], edgecolor="white", linewidth=0.4)
             ax.text(x["wall_ms"] * 1.02, yi, f" {liczba(x['wall_ms'])} ms", va="center", fontsize=plt.rcParams["legend.fontsize"])
-        ax.set_xlim(0, d["wall_ms"].max() * 1.3)
+        ax.set_xlim(0, d["wall_ms"].max() * 1.15)
         ax.set_yticks(y, list(d["opis"]))
-        ax.set_xlabel("czas [ms]")
-        ax.set_title(f"{nazwa_maski(mk)}, obraz 4K", fontsize=plt.rcParams["axes.labelsize"])
+        tytul_panelu(ax, f"{nazwa_maski(mk)}, obraz 4K")
         ax.grid(axis="y", visible=False)
         os_przecinek(ax, os_y=False)
-    fig.tight_layout()
-    legenda_pod(fig, osie[0][0], ncol=3)
+    osie[-1].set_xlabel("czas [ms]")
+    fig.tight_layout(h_pad=0.6)
+    legenda_pod(fig, osie[0], ncol=3)
     out.zapisz_rys(fig, "e5_gpu_etapy", "E5")
 
     # (b) czas w funkcji rozmiaru
@@ -739,10 +759,11 @@ def e5(ex: Eksperyment, out: Wyjscie) -> None:
         ax.set_yscale("log")
         ax.set_xlabel("rozmiar obrazu [Mpix]")
         ax.set_ylabel("czas [ms]")
-        ax.set_title(nazwa_maski(mk), fontsize=plt.rcParams["axes.labelsize"])
+        tytul_panelu(ax, nazwa_maski(mk))
         os_przecinek(ax)
+    osie[0][1].set_ylabel("")
     fig.tight_layout()
-    legenda_pod(fig, osie[0][0], ncol=4)
+    legenda_pod(fig, osie[0][0], ncol=2)
     out.zapisz_rys(fig, "e5_gpu_rozmiar", "E5")
 
     for _, x in med.iterrows():
@@ -775,19 +796,19 @@ def e5b(ex: Eksperyment, out: Wyjscie) -> None:
                                                                  kmin=("kernel_ms", "min"), kmax=("kernel_ms", "max")).reset_index()
     obr = list(dict.fromkeys(a.sort_values("width")["image"]))
     wgs = sorted(set(a["gpu_wg"]), key=lambda s: (int(s.split("x")[0]) * int(s.split("x")[1]), s))
-    fig, osie = plt.subplots(1, len(obr), figsize=(SZER, WYS), squeeze=False)
-    for ax, o in zip(osie[0], obr):
+    fig, osie = pionowo(len(obr), 4.0 * CM)
+    for ax, o in zip(osie, obr):
         for i, wg in enumerate(wgs):
             d = a[(a["image"] == o) & (a["gpu_wg"] == wg)].sort_values("items")
             ax.errorbar(d["items"] / 1e6, d["kernel"], yerr=[d["kernel"] - d["kmin"], d["kmax"] - d["kernel"]], capsize=1.5,
                         label=f"grupa robocza {wg.replace('x', '×')}", **styl_inny(i))
         ax.set_xscale("log")
-        ax.set_xlabel("liczba wątków GPU (work-items) [mln] (skala log.)")
-        ax.set_ylabel("czas obliczeń na GPU [ms]")
-        ax.set_title(etykieta_obrazu(o), fontsize=plt.rcParams["axes.labelsize"])
+        ax.set_ylabel("czas kernela [ms]")
+        tytul_panelu(ax, etykieta_obrazu(o))
         os_przecinek(ax)
-    fig.tight_layout()
-    legenda_pod(fig, osie[0][0], ncol=4)
+    osie[-1].set_xlabel("liczba wątków GPU (work-items) [mln], skala logarytmiczna")
+    fig.tight_layout(h_pad=0.6)
+    legenda_pod(fig, osie[0], ncol=4)
     out.zapisz_rys(fig, "e5b_gpu_watki", "E5b")
     for _, x in a.iterrows():
         out.m(f"e5b/{klucz_obrazu(x['image'])}/{x['gpu_wg']}/ppw{int(x['gpu_ppw'])}/kernel", x["kernel"])
@@ -807,8 +828,8 @@ def e6(ex: Eksperyment, out: Wyjscie) -> None:
     """W4: pula wątków vs nowe wątki w każdym etapie."""
     a = agreguj(ex.res)
     obr = list(dict.fromkeys(a.sort_values("mpix")["image"]))
-    fig, osie = plt.subplots(1, len(obr), figsize=(SZER, WYS), squeeze=False)
-    for ax, o in zip(osie[0], obr):
+    fig, osie = pionowo(len(obr), 4.0 * CM, sharex=True)
+    for ax, o in zip(osie, obr):
         i = 0
         for m, mo in [("pool", "pula"), ("spawn", "nowe wątki w każdym etapie")]:
             for h in ["static", "dynamic"]:
@@ -819,12 +840,13 @@ def e6(ex: Eksperyment, out: Wyjscie) -> None:
                         out.m(f"e6/{m}/{h}/{klucz_obrazu(o)}/t{x['threads']}", x["mediana"])
                 i += 1
         ax.set_yscale("log")
-        ax.set_xlabel("liczba wątków N")
-        ax.set_ylabel("czas [ms] (skala log.)")
-        ax.set_title(etykieta_obrazu(o), fontsize=plt.rcParams["axes.labelsize"])
+        ax.set_ylabel("czas [ms]")
+        tytul_panelu(ax, etykieta_obrazu(o))
         os_przecinek(ax)
-    fig.tight_layout()
-    legenda_pod(fig, osie[0][0], ncol=4)
+        ax.yaxis.set_major_locator(ticker.LogLocator(base=10, subs=(1.0, 2.0, 5.0)))
+    osie[-1].set_xlabel("liczba wątków N")
+    fig.tight_layout(h_pad=0.6)
+    legenda_pod(fig, osie[0], ncol=2)
     out.zapisz_rys(fig, "e6_mechanizmy", "E6")
 
 
@@ -842,8 +864,9 @@ def e8(ex: Eksperyment, out: Wyjscie) -> None:
             out.m(f"e8/{sc}/t{x['threads']}", x["mediana"])
     ax.set_yscale("log")
     ax.set_xlabel("liczba wątków N")
-    ax.set_ylabel("czas [ms] (skala log.)")
+    ax.set_ylabel("czas [ms], skala log.")
     os_przecinek(ax)
+    ax.yaxis.set_major_locator(ticker.LogLocator(base=10, subs=(1.0, 2.0, 5.0)))
     ax.legend(loc="upper right")
     out.zapisz_rys(fig, "e8_normalizacja", "E8")
 
@@ -851,10 +874,11 @@ def e8(ex: Eksperyment, out: Wyjscie) -> None:
 def e8b(ex: Eksperyment, out: Wyjscie) -> None:
     """W4: sposób wyznaczania globalnego maksimum (synchronizacja, false sharing)."""
     a = agreguj(ex.res)
-    nazwy = {"local": "lokalne maksimum + redukcja", "atomic": "atomic CAS na piksel", "mutex": "mutex na piksel",
-             "px_pad": "zapis na piksel, osobne linie cache", "px_nopad": "zapis na piksel, jedna linia cache (false sharing)"}
+    nazwy = {"local": "lokalne maksimum + redukcja", "atomic": "zmienna atomowa (CAS)", "mutex": "mutex na piksel",
+             "px_pad": "komórki w osobnych liniach", "px_nopad": "komórki w jednej linii (false sharing)"}
     n = int(a["threads"].max())
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(SZER, WYS), gridspec_kw={"width_ratios": [1.1, 1]})
+    fig, osie = plt.subplots(2, 1, figsize=(SZER, 8.6 * CM), gridspec_kw={"height_ratios": [1, 1.15]})
+    ax1, ax2 = osie
     d = a[a["threads"] == n].set_index("reduce").reindex(["local", "atomic", "px_pad", "px_nopad", "mutex"]).dropna(how="all")
     y = np.arange(len(d))[::-1]
     for i, (yi, (red, x)) in enumerate(zip(y, d.iterrows())):
@@ -864,19 +888,22 @@ def e8b(ex: Eksperyment, out: Wyjscie) -> None:
     ax1.set_yticks(y, [nazwy[r] for r in d.index])
     ax1.set_xscale("log")
     ax1.set_xlim(d["min"].min() / 2, d["max"].max() * 8)
-    ax1.set_xlabel(f"czas [ms] (skala log.), {n} wątków")
+    ax1.set_xlabel("czas [ms], skala logarytmiczna")
+    tytul_panelu(ax1, f"{n} wątków")
     ax1.grid(axis="y", visible=False)
     os_przecinek(ax1, os_y=False)
     for i, red in enumerate(d.index):
         dd = a[a["reduce"] == red].sort_values("threads")
-        ax2.plot(dd["threads"], dd["mediana"], color=INNE[i], marker=INNE_M[i], linestyle=INNE_L[i])
+        ax2.plot(dd["threads"], dd["mediana"], color=INNE[i], marker=INNE_M[i], linestyle=INNE_L[i], label=nazwy[red])
         for _, x in dd.iterrows():
             out.m(f"e8b/{red}/t{x['threads']}", x["mediana"])
     ax2.set_yscale("log")
     ax2.set_xlabel("liczba wątków N")
-    ax2.set_ylabel("czas [ms] (skala log.)")
+    ax2.set_ylabel("czas [ms], skala log.")
+    tytul_panelu(ax2, "w funkcji liczby wątków")
     os_przecinek(ax2)
-    fig.tight_layout()
+    fig.tight_layout(h_pad=0.8)
+    legenda_pod(fig, ax2, ncol=3)
     out.zapisz_rys(fig, "e8b_redukcja", "E8b")
     for red in d.index:
         out.m(f"e8b/{red}/wzgl-local-t{n}", d.loc[red, "mediana"] / d.loc["local", "mediana"])
@@ -886,8 +913,8 @@ def e9(ex: Eksperyment, out: Wyjscie) -> None:
     """W4, cały program z JPG: prawo Amdahla."""
     a = ex.res.groupby(["image", "threads", "width"])[["wall_ms", "process_ms", "load_ms", "save_ms"]].median().reset_index()
     obr = list(dict.fromkeys(a.sort_values("width")["image"]))
-    fig, osie = plt.subplots(1, len(obr), figsize=(SZER, WYS), squeeze=False)
-    for ax, o in zip(osie[0], obr):
+    fig, osie = pionowo(len(obr), 4.2 * CM, sharex=True)
+    for ax, o in zip(osie, obr):
         d = a[a["image"] == o].sort_values("threads")
         t1 = d[d["threads"] == 1].iloc[0]
         S_cal, S_prz = t1["wall_ms"] / d["wall_ms"], t1["process_ms"] / d["process_ms"]
@@ -897,10 +924,9 @@ def e9(ex: Eksperyment, out: Wyjscie) -> None:
         ax.plot(d["threads"], S_prz, label="sam algorytm", **styl_inny(0))
         ax.plot(d["threads"], S_cal, label="cały program (wczytanie + algorytm + zapis JPG)", **styl_inny(1))
         ax.plot(NN, amdahl(NN, s_zm), color=INNE[1], linestyle=":", linewidth=0.8, label="prawo Amdahla dla zmierzonego s")
-        ax.set_xlabel("liczba wątków N")
         ax.set_ylabel("przyspieszenie S(N)")
-        ax.set_title(f"{etykieta_obrazu(o)}: T(1) = {liczba(t1['wall_ms'])} ms, s = {liczba(s_zm * 100, 1)}%",
-                     fontsize=plt.rcParams["axes.labelsize"])
+        tytul_panelu(ax, f"{etykieta_obrazu(o)}, plik JPG: T(1) = {liczba(t1['wall_ms'])} ms, "
+                         f"wczytanie i zapis s = {liczba(s_zm * 100, 1)}%")
         ax.set_ylim(0, max(S_prz.max() * 1.15, 2))
         os_przecinek(ax)
         ko = klucz_obrazu(o)
@@ -912,8 +938,9 @@ def e9(ex: Eksperyment, out: Wyjscie) -> None:
                         (f"calosc-t{n}", tn["wall_ms"], None), (f"S-calosc-t{n}", S_cal.iloc[-1], None),
                         (f"S-przetw-t{n}", S_prz.iloc[-1], None)]:
             out.m(f"e9/{ko}/{k}", v, m)
-    fig.tight_layout()
-    legenda_pod(fig, osie[0][0], ncol=2)
+    osie[-1].set_xlabel("liczba wątków N")
+    fig.tight_layout(h_pad=0.6)
+    legenda_pod(fig, osie[0], ncol=2)
     out.zapisz_rys(fig, "e9_amdahl", "E9")
 
 
@@ -962,10 +989,10 @@ def e13(ex: Eksperyment, out: Wyjscie) -> None:
         ax.set_yscale("log")
         ax.set_xlabel("rozmiar obrazu n [Mpix]")
         ax.set_ylabel("czas [ms]")
-        ax.set_title(nazwa_maski(mk), fontsize=plt.rcParams["axes.labelsize"])
+        tytul_panelu(ax, nazwa_maski(mk))
         os_przecinek(ax)
     fig.tight_layout()
-    legenda_pod(fig, osie[0][0], ncol=6)
+    legenda_pod(fig, osie[0][0], ncol=3)
     out.zapisz_rys(fig, "e13_czas", "E13")
 
     fig, osie = plt.subplots(1, len(maski), figsize=(SZER, WYS * 1.05), squeeze=False, sharey=True)
@@ -978,10 +1005,10 @@ def e13(ex: Eksperyment, out: Wyjscie) -> None:
         ax.set_xscale("log")
         ax.set_xlabel("rozmiar obrazu n [Mpix]")
         ax.set_ylabel("przyspieszenie względem W1")
-        ax.set_title(nazwa_maski(mk), fontsize=plt.rcParams["axes.labelsize"])
+        tytul_panelu(ax, nazwa_maski(mk))
         os_przecinek(ax)
     fig.tight_layout()
-    legenda_pod(fig, osie[0][0], ncol=5)
+    legenda_pod(fig, osie[0][0], ncol=3)
     out.zapisz_rys(fig, "e13_przyspieszenie", "E13")
 
     fig, osie = plt.subplots(1, len(maski), figsize=(SZER, WYS * 1.05), squeeze=False)
@@ -989,19 +1016,20 @@ def e13(ex: Eksperyment, out: Wyjscie) -> None:
         for v in wersje:
             d = seria[(seria["mask"] == mk) & (seria["variant"] == v)].sort_values("mpix")
             ax.plot(d["mpix"], d["mpix"] / (d["mediana"] / 1000.0), **linia_w(v))
-        for b, opis in [(1 << 20, "L2 1 MB"), (32 << 20, "L3 jednego CCD"), (64 << 20, "L3 obu CCD")]:
+        for b, opis in [(1 << 20, "L2"), (32 << 20, "L3, 1 CCD"), (64 << 20, "L3, 2 CCD")]:
             n6 = b / 6 / 1e6
             ax.axvline(n6, color="#888", linewidth=0.6, linestyle=":")
-            ax.text(n6 * 1.08, 0.03, f"{opis} (6 B/piksel)", rotation=90, fontsize=plt.rcParams["legend.fontsize"] * 0.8,
-                    color="#666", va="bottom", ha="left", transform=ax.get_xaxis_transform())
+            if mk == maski[0]:
+                ax.text(n6 * 1.08, 0.03, opis, rotation=90, fontsize=plt.rcParams["legend.fontsize"] * 0.9,
+                        color="#555", va="bottom", ha="left", transform=ax.get_xaxis_transform())
         ax.set_xscale("log")
         ax.set_yscale("log")
         ax.set_xlabel("rozmiar obrazu n [Mpix]")
         ax.set_ylabel("przepustowość [Mpix/s]")
-        ax.set_title(nazwa_maski(mk), fontsize=plt.rcParams["axes.labelsize"])
+        tytul_panelu(ax, nazwa_maski(mk))
         os_przecinek(ax)
     fig.tight_layout()
-    legenda_pod(fig, osie[0][0], ncol=5)
+    legenda_pod(fig, osie[0][0], ncol=3)
     out.zapisz_rys(fig, "e13_przepustowosc", "E13")
 
     for mk in maski:

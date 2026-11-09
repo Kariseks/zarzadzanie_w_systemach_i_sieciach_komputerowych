@@ -22,7 +22,7 @@
 
 \begin{document}
 
-% Nagłówek jak we wzorze materialy/zal_proj_zssk.pdf (bez strony tytułowej).
+% Nagłówek jak we wzorze materialy/projekt/zal_proj_zssk.pdf (bez strony tytułowej).
 \thispagestyle{empty}
 \noindent
 \begin{minipage}[t]{0.5\textwidth}
@@ -47,7 +47,9 @@
 
 Temat: Mechanizmy zarządzania wątkami programowymi w zadaniu wykrywania krawędzi na obrazach cyfrowych z wykorzystaniem operatorów gradientowych (Sobela i pokrewnych).
 
-Cel projektu: projekt i implementacja programu wykrywającego krawędzie na obrazie cyfrowym w pięciu wersjach oraz zmierzenie, ile czasu przetwarzania oszczędza każdy rodzaj przyspieszenia. Wersja W1 jest prostą implementacją sekwencyjną i stanowi punkt odniesienia. Każda z wersji W2--W5 bierze kod W1 i wprowadza do niego \emph{jeden} rodzaj przyspieszenia, odpowiadający innemu poziomowi przetwarzania równoległego \cite{czech}: zmianę algorytmu i sposobu korzystania z pamięci (W2), równoległość na poziomie instrukcji procesora -- SIMD (W3), równoległość na poziomie wątków na wielu rdzeniach procesora (W4) oraz przetwarzanie na setkach rdzeni karty graficznej (W5). Wersje nie są łączone ze sobą: każda jest porównywana z W1, dzięki czemu wynik pokazuje wkład jednego mechanizmu, a nie sumę kilku.
+Cel projektu: projekt i implementacja programu wykrywającego krawędzie na obrazie cyfrowym w pięciu wersjach oraz zmierzenie, ile czasu przetwarzania oszczędza każdy rodzaj przyspieszenia. Wersja W1 jest prostą implementacją sekwencyjną i stanowi punkt odniesienia. Każda z wersji W2--W5 bierze kod W1 i wprowadza do niego \emph{jeden} rodzaj przyspieszenia. Wersja W2 nie korzysta z równoległości: zmienia algorytm i sposób korzystania z pamięci, aby sprawdzić, ile daje sama optymalizacja kodu na jednym rdzeniu. Wersje W3--W5 odpowiadają kolejnym poziomom przetwarzania równoległego \cite{czech}: równoległości na poziomie instrukcji procesora, czyli SIMD (W3), równoległości wątków na wielu rdzeniach procesora (W4) i masowej równoległości danych na setkach rdzeni karty graficznej (W5). Wersje nie będą łączone ze sobą. Każda zostanie porównana z W1, dzięki czemu zmierzony zysk pokaże wkład jednego mechanizmu, a nie sumę kilku.
+
+W ujęciu przedmiotu jest to problem zarządzania zasobami obliczeniowymi komputera: rdzeniami procesora i ich wątkami sprzętowymi, pamięcią podręczną i operacyjną oraz kartą graficzną. Program musi rozdzielić pracę (wiersze obrazu albo piksele) pomiędzy te zasoby, zsynchronizować wątki i ograniczyć przesyłanie danych tak, aby czas przetwarzania był jak najkrótszy, a wynik pozostał poprawny. Najwięcej uwagi zostanie poświęcone wersji W4, w której te decyzje podejmuje własny mechanizm zarządzania wątkami (pula wątków i scheduler).
 
 Zakres projektu obejmuje:
 \begin{itemize}
@@ -70,7 +72,7 @@ Problem będzie rozwiązywany przy następujących założeniach:
 	\item piksele leżące poza brzegiem obrazu zastępuje się najbliższym pikselem brzegowym (powielenie krawędzi);
 	\item wynikiem jest obraz 8-bitowy o tych samych wymiarach co wejście;
 	\item najmniejszą jednostką podziału pracy pomiędzy wątki procesora jest wiersz obrazu, a pomiędzy wątki karty graficznej -- piksel;
-	\item wszystkie wersje muszą dawać wynik identyczny co do bitu z wynikiem wersji W1.
+	\item wszystkie wersje muszą dawać wynik identyczny co do bitu z wynikiem wersji W1; jedynym wyjątkiem jest pomocniczy wariant GPU liczący zawsze w pojedynczej precyzji, dla którego dopuszcza się różnicę o 1 poziom szarości.
 \end{itemize}
 
 Problem obliczeniowy \cite{gonzalez,tadeusiewicz}: dla obrazu $I$ o wymiarach $W \times H$ i pary masek $K_x$, $K_y$ o rozmiarze $k \times k$ wyznaczyć dla każdego piksela moduł gradientu
@@ -78,27 +80,34 @@ Problem obliczeniowy \cite{gonzalez,tadeusiewicz}: dla obrazu $I$ o wymiarach $W
 	G(x, y) = \sqrt{G_x(x, y)^{2} + G_y(x, y)^{2}}, \qquad G_x = K_x * I, \qquad G_y = K_y * I,
 	\label{eq:gradient}
 \end{equation}
-gdzie $*$ oznacza dwuwymiarowy splot dyskretny
+gdzie $*$ oznacza dwuwymiarowy splot dyskretny w postaci przyjętej w przetwarzaniu obrazów \cite{gonzalez}
 \begin{equation}
 	(K * I)(x, y) = \sum_{i=0}^{k-1} \sum_{j=0}^{k-1} K(i, j)\; I\!\left(x + j - \lfloor k/2 \rfloor,\; y + i - \lfloor k/2 \rfloor\right),
 \end{equation}
-a następnie przeskalować wynik do zakresu 0--255: $O(x, y) = \operatorname{round}\big(255 \cdot G(x, y) / \max G\big)$. Skalowanie względem największej wartości w obrazie wymaga znajomości $\max G$, czyli zakończenia obliczeń dla całego obrazu przed zapisaniem pierwszego piksela wyniku. Jako warianty pomocnicze zostaną zbadane skalowanie stałe (względem teoretycznego maksimum maski) i obcięcie wartości większych od 255, które tego wymagania nie mają.
+Formalnie wzór~(2) opisuje korelację, ponieważ maska nie jest odwrócona. Dla masek gradientowych odwrócenie zmienia tylko znak $G_x$ i $G_y$, a nie moduł $G$, więc wynik jest ten sam. Należy następnie przeskalować wynik do zakresu 0--255: $O(x, y) = \operatorname{round}\big(255 \cdot G(x, y) / \max G\big)$. Skalowanie względem największej wartości w obrazie wymaga znajomości $\max G$, czyli zakończenia obliczeń dla całego obrazu przed zapisaniem pierwszego piksela wyniku. Jako warianty pomocnicze zostaną zbadane skalowanie stałe (względem teoretycznego maksimum maski) i obcięcie wartości większych od 255, które tego wymagania nie mają.
+
+Parametrami problemu są:
+\begin{itemize}
+	\item dane wejściowe: wymiary obrazu $W \times H$, maska (rodzaj i rozmiar $k$), sposób skalowania wyniku;
+	\item zasoby sprzętowe: liczba rdzeni procesora i wątków sprzętowych, pojemność pamięci podręcznej, liczba rdzeni karty graficznej;
+	\item zmienne decyzyjne, czyli sposób zarządzania zasobami: wersja programu, liczba wątków $N$, strategia przydziału wierszy do wątków i rozmiar fragmentu $c$, sposób synchronizacji przy wyznaczaniu maksimum, pula wątków albo nowe wątki, przypisanie wątków do rdzeni, a dla karty graficznej -- rozmiar grupy roboczej, liczba pikseli na wątek i precyzja obliczeń.
+\end{itemize}
+Ograniczeniami są: wynik identyczny co do bitu z W1 (z wyjątkiem wariantu GPU w pojedynczej precyzji, dla którego dopuszcza się różnicę o 1 poziom szarości), liczba wątków sprzętowych procesora (24) i rdzeni karty (768), pojemność pamięci karty (4~GB) oraz bariera wynikająca ze skalowania względem maksimum: drugi etap nie może się rozpocząć, zanim pierwszy nie zakończy się dla całego obrazu.
 
 Problem decyzyjny: czy dla danego obrazu, maski i sprzętu istnieje wersja programu i jej konfiguracja (liczba wątków, strategia przydziału pracy, rozmiar fragmentu, rozmiar grupy roboczej GPU), dla której czas przetwarzania nie przekracza zadanej wartości $T_{\max}$?
 
-Problem optymalizacyjny \cite{williams,openmp}: dla każdej wersji dobrać parametry tak, aby zapewnić optymalne wartości kryteriów:
+Problem optymalizacyjny \cite{czech}: dla każdej wersji dobrać wartości zmiennych decyzyjnych tak, aby zapewnić optymalne wartości następujących kryteriów:
 \begin{itemize}
 	\item czas zegarowy przetwarzania obrazu -- minimum;
 	\item przyspieszenie względem wersji W1, $S = T_{W1} / T_{Wi}$ -- maksimum;
 	\item dla wersji wielowątkowej: przyspieszenie $S(N) = T(1)/T(N)$ i efektywność $E(N) = S(N)/N$ -- maksimum; nierównowaga obciążenia wątków (różnica czasów zakończenia pracy) -- minimum;
-	\item zgodność wyniku z wersją W1 -- wynik identyczny co do bitu.
 \end{itemize}
-Niezależnym kryterium jakości jest trafność wykrywania krawędzi (rozdział~\ref{sec:testy}), która zależy od maski, ale nie od wersji programu.
+Osobnym kryterium jest jakość wykrywania krawędzi. Zależy ona od wyboru maski, a nie od wersji programu, ponieważ wszystkie wersje mają dawać ten sam wynik. Dlatego zostanie zbadana oddzielnie (punkt~\ref{sec:testy}).
 
 %======================================================================
 \section{Analiza złożoności obliczeniowej problemu}
 
-Wyznaczenie modułu gradientu jest problemem z klasy P. Splot dwuwymiarowy wymaga dla każdego piksela $k^2$ mnożeń i dodawań dla $G_x$ i tyle samo dla $G_y$, czyli $2k^2$ operacji, a więc całe zadanie ma złożoność $O(W H k^{2})$. Maski Sobela, Prewitta i Scharra są rozdzielne -- dają się zapisać jako iloczyn wektora wygładzającego $s$ i różnicującego $d$, np. dla Sobela $3\times3$:
+Samo wyznaczenie modułu gradientu jest problemem obliczeniowym rozwiązywalnym w czasie wielomianowym, czyli z klasy P (ściślej FP, ponieważ wynikiem jest obraz, a nie odpowiedź tak/nie): istnieje algorytm deterministyczny o złożoności wielomianowej, który oblicza wynik dokładnie, bez przeszukiwania przestrzeni rozwiązań. Splot dwuwymiarowy wymaga dla każdego piksela $k^2$ mnożeń z dodawaniem dla $G_x$ i tyle samo dla $G_y$, czyli $2k^2$ operacji. Całe zadanie ma więc złożoność $O(W H k^{2})$, liniową względem liczby pikseli. Maski Sobela, Prewitta i Scharra są rozdzielne: każdą z nich można zapisać jako iloczyn wektora wygładzającego $s$ i różnicującego $d$, np. dla Sobela $3\times3$:
 \begin{equation}
 	K_x = s^{T} d = \begin{bmatrix} 1 \\ 2 \\ 1 \end{bmatrix} \begin{bmatrix} -1 & 0 & 1 \end{bmatrix},
 	\qquad K_y = d^{T} s.
@@ -110,24 +119,26 @@ Wartość każdego piksela wyniku zależy wyłącznie od jego otoczenia w obrazi
 	S(N) \le \frac{1}{s + \dfrac{1 - s}{N}}, \qquad \lim_{N \to \infty} S(N) = \frac{1}{s},
 	\label{eq:amdahl}
 \end{equation}
-gdzie $s$ oznacza udział części sekwencyjnej w czasie wykonania na jednej jednostce. W tym zadaniu część sekwencyjną tworzą: wczytanie i dekodowanie pliku obrazu, zapis wyniku, alokacja buforów, redukcja maksimum i bariera między etapami, a w wersji GPU -- przesłanie obrazu na kartę i wyniku z powrotem. Drugim ograniczeniem jest przepustowość pamięci: splot $3 \times 3$ wykonuje kilkanaście operacji na każdy bajt danych, więc po przyspieszeniu obliczeń może go ograniczać szybkość odczytu i zapisu pamięci, a nie moc obliczeniowa.
+gdzie $s$ oznacza udział części sekwencyjnej w czasie wykonania na jednej jednostce. W notacji wykładu \cite{wojcik} przyspieszenie oznacza się $A_p$, a liczbę procesorów $p$; w tym dokumencie odpowiadają im $S(N)$ i liczba wątków $N$. W tym zadaniu część sekwencyjną tworzą: wczytanie i dekodowanie pliku obrazu, zapis wyniku, przydział buforów, redukcja maksimum i bariera między etapami, a w wersji GPU także przesłanie obrazu na kartę i wyniku z powrotem. Drugim ograniczeniem jest przepustowość pamięci. Splot $3 \times 3$ wykonuje około 18 operacji na piksel, a jednocześnie przesyła z pamięci i do pamięci około 6~B na piksel, czyli zaledwie około 3 operacje na bajt danych. Po przyspieszeniu obliczeń czas może więc zależeć bardziej od szybkości odczytu i zapisu pamięci niż od mocy obliczeniowej, szczególnie gdy obraz nie mieści się w pamięci podręcznej.
+
+Problem zarządzania, czyli wybór konfiguracji, ma inny charakter niż samo obliczenie. Problem decyzyjny i optymalizacyjny z punktu~2 dotyczą skończonego, niewielkiego zbioru konfiguracji (kilka wersji, do 48 wątków, 4 strategie przydziału, kilka rozmiarów fragmentu i grupy roboczej), więc można je rozwiązać dokładnie przeglądem zupełnym, w czasie wielomianowym względem liczby wartości każdego parametru. Trudność nie leży w złożoności obliczeniowej, ale w tym, że wartość kryterium (czas) nie wynika ze wzoru i trzeba ją zmierzyć dla każdej konfiguracji z powtórzeniami. Podproblem przydziału wierszy do wątków jest problemem szeregowania zadań na $N$ identycznych procesorach z kryterium długości uszeregowania ($P\,||\,C_{\max}$) \cite{blazewicz}. Gdy wszystkie wiersze wymagają tyle samo pracy, optymalny jest równy podział (po $\lceil H/N \rceil$ wierszy na wątek), co realizuje strategia \emph{static}. W rzeczywistości czas wiersza zależy od chwilowej dostępności rdzenia (inne procesy, SMT, przerwania), a problem $P\,||\,C_{\max}$ z różnymi czasami zadań jest NP-trudny. Dlatego strategie \emph{dynamic} i \emph{guided} stosują szeregowanie listowe: zadanie trafia do pierwszego wolnego wątku. Jest to heurystyka, która daje uszeregowanie co najwyżej $2 - 1/N$ razy dłuższe od optymalnego \cite{blazewicz}.
 
 Liczbę operacji i sposób zrównoleglenia w poszczególnych wersjach zestawiono w tabeli~\ref{tab:zlozonosc}.
 
 \begin{table}[ht]
 	\centering
-	\caption{Złożoność i równoległość wersji programu (obraz $W \times H$, maska $k \times k$, $N$ wątków).}
+	\caption{Złożoność i równoległość wersji programu (obraz $W \times H$, maska $k \times k$, $N$ wątków procesora, $P$ rdzeni karty graficznej).}
 	\label{tab:zlozonosc}
 	\small
-	\begin{tabularx}{\textwidth}{@{}lLLl@{}}
+	\begin{tabularx}{\textwidth}{@{}lLLL@{}}
 		\toprule
-		Wersja & Operacje na piksel & Równoległość & Czas (rząd) \\
+		Wersja & Operacje na piksel & Równoległość & Złożoność i oczekiwany czas \\
 		\midrule
 		W1 & $2k^2$ mnożeń, $2k^2$ obcięć współrzędnych & brak & $O(WHk^2)$ \\
 		W2 & $4k$ mnożeń (rozdzielne), bez obcięć we wnętrzu & brak & $O(WHk)$ \\
-		W3 & $2k^2$ mnożeń wykonywanych po 8 naraz & 8 pikseli na instrukcję (AVX2) & $O(WHk^2/8)$ \\
-		W4 & $2k^2$ mnożeń, jak W1 & $N$ wątków na rdzeniach CPU & $O(WHk^2/N)$ + część sekwencyjna \\
-		W5 & $2k^2$ mnożeń, jak W1 & tysiące wątków GPU na 768 rdzeniach & $O(WHk^2/P)$ + przesył danych \\
+		W3 & $2k^2$ mnożeń wykonywanych po 8 naraz & 8 pikseli na instrukcję (AVX2) & $O(WHk^2)$, czas do 8 razy krótszy \\
+		W4 & $2k^2$ mnożeń, jak W1 & $N$ wątków na rdzeniach CPU & $O(WHk^2)$ pracy, czas do $N$ razy krótszy, ograniczony częścią sekwencyjną \\
+		W5 & $2k^2$ mnożeń, jak W1 & do kilku milionów wątków GPU na 768 rdzeniach & $O(WHk^2)$ pracy rozłożonej na $P$ rdzeni, plus przesył danych \\
 		\bottomrule
 	\end{tabularx}
 \end{table}
@@ -160,14 +171,14 @@ Ponieważ zysk ze splotu rozdzielnego rośnie z rozmiarem maski, oczekuje się, 
 
 \subsection{Wersja W3 -- wektoryzacja SIMD (1 rdzeń)}
 
-Wersja W3 zachowuje algorytm W1 bez zmian: splot dwuwymiarowy $k \times k$, współczynniki maski odczytywane z tablicy w czasie wykonania (bez pomijania zer i bez rozdzielności), ten sam sposób liczenia modułu, przydział buforów przy każdym wywołaniu. Jedyną zmianą jest wykonywanie obliczeń dla 8 pikseli jednocześnie instrukcjami wektorowymi AVX2 \cite{intel}, czyli równoległość na poziomie instrukcji procesora:
+Wersja W3 zachowuje algorytm W1: splot dwuwymiarowy $k \times k$, współczynniki maski odczytywane z tablicy w czasie wykonania (bez pomijania zer i bez rozdzielności), ten sam sposób liczenia modułu, przydział buforów przy każdym wywołaniu. Zmianą jest wykonywanie obliczeń dla 8 pikseli jednocześnie instrukcjami wektorowymi AVX2 \cite{intel}, czyli równoległość na poziomie instrukcji procesora:
 \begin{itemize}
 	\item dla każdego pola maski 8 sąsiednich pikseli (8~bajtów) jest wczytywanych jedną instrukcją i rozszerzanych do ośmiu liczb 32-bitowych w 256-bitowym rejestrze (\kod{\_mm256\_\allowbreak{}cvtepu8\_epi32});
 	\item współczynnik maski jest powielany do wszystkich 8 pozycji rejestru, a mnożenie i dodawanie (\kod{\_mm256\_\allowbreak{}mullo\_epi32}, \kod{\_mm256\_\allowbreak{}add\_epi32}) wykonują się dla 8 pikseli w jednej instrukcji;
 	\item moduł jest liczony wektorowo: pierwiastkiem z 8 liczb pojedynczej precyzji (\kod{\_mm256\_\allowbreak{}sqrt\_ps}), gdy $G_x^2 + G_y^2 < 2^{24}$ i wynik jest dokładny, a w przeciwnym razie 2~razy po 4~liczby podwójnej precyzji (\kod{\_mm256\_\allowbreak{}sqrt\_pd});
 	\item drugi przebieg (skalowanie do 0--255) również przetwarza 8 pikseli na instrukcję.
 \end{itemize}
-Instrukcji wektorowej nie da się zastosować do pikseli brzegowych, dla których każdy z 8 pikseli wymagałby innego obcięcia współrzędnych. Dlatego kolumny brzegowe są liczone kodem W1, a w ścieżce wektorowej obcinany jest tylko numer wiersza źródłowego (raz na wiersz maski). Teoretyczna granica przyspieszenia wynosi 8; w praktyce będzie mniejsza z powodu kosztu rozszerzania bajtów do 32 bitów, części skalarnej przy brzegach i przepustowości pamięci.
+Instrukcji wektorowej nie da się zastosować do pikseli brzegowych, dla których każdy z 8 pikseli wymagałby innego obcięcia współrzędnych. Dlatego kolumny brzegowe są liczone kodem W1, a w ścieżce wektorowej obcinany jest tylko numer wiersza źródłowego (raz na wiersz maski). Ta zmiana nie jest celem W3, ale zostanie wymuszona przez wektoryzację. Ma jednak skutek uboczny: ścieżka wektorowa nie obcina współrzędnych kolumn we wnętrzu obrazu, więc część zysku W3 będzie pochodzić z usunięcia tych obcięć, czyli z optymalizacji, którą W2 wprowadza osobno. Zostanie to uwzględnione przy interpretacji wyników. Teoretyczna granica przyspieszenia samej wektoryzacji wynosi 8. W praktyce zysk będzie mniejszy z powodu kosztu rozszerzania bajtów do 32 bitów, części skalarnej przy brzegach i przepustowości pamięci.
 
 \subsection{Wersja W4 -- wątki na wielu rdzeniach procesora}
 
@@ -177,7 +188,7 @@ Wersja W4 wykonuje kod W1 bez zmian (to samo jądro obliczeniowe), ale dzieli ob
 	\item redukcja lokalnych maksimów do maksimum globalnego, a następnie równoległe skalowanie wyniku.
 \end{enumerate}
 
-Wątki są tworzone raz i utrzymywane w puli (\emph{thread pool}): między etapami czekają uśpione na zmiennej warunkowej (\kod{std::condition\_variable}) i są budzone, gdy pojawia się praca. Przydziałem fragmentów zarządza scheduler oferujący cztery strategie wzorowane na klauzuli \kod{schedule} standardu OpenMP \cite{openmp}:
+Wątki są tworzone raz i utrzymywane w puli (\emph{thread pool}): między etapami czekają uśpione na zmiennej warunkowej (\kod{std::condition\_variable}) i są budzone, gdy pojawia się praca \cite{karbowski,williams}. Przydziałem fragmentów zarządza scheduler oferujący cztery strategie wzorowane na klauzuli \kod{schedule} standardu OpenMP \cite{openmp}:
 \begin{itemize}
 	\item \emph{static} -- obraz dzielony na $N$ równych bloków, po jednym na wątek; brak narzutu, ale wątek opóźniony przez system wydłuża cały etap;
 	\item \emph{cyclic} -- fragmenty po $c$ wierszy przydzielane kolejnym wątkom po kolei (fragment $i$ dla wątku $i \bmod N$);
@@ -198,7 +209,7 @@ Oczekuje się, że przyspieszenie W4 będzie ograniczone przez część sekwency
 
 \subsection{Wersja W5 -- karta graficzna (OpenCL)}
 
-Wersja W5 przenosi algorytm W1 bez zmian na kartę graficzną NVIDIA GeForce GTX 1050 Ti (768 rdzeni CUDA w 6 multiprocesorach) przy użyciu standardu OpenCL \cite{opencl}. Każdy wątek karty (\emph{work-item}) oblicza jeden piksel: czyta $k \times k$ pikseli z pamięci globalnej karty, mnoży je przez współczynniki maski z pamięci stałej i oblicza moduł. Przebieg programu:
+Wersja W5 przenosi algorytm W1 bez zmian na kartę graficzną NVIDIA GeForce GTX 1050 Ti (768 rdzeni CUDA w 6 multiprocesorach) przy użyciu standardu OpenCL \cite{opencl}. W podstawowej konfiguracji każdy wątek karty (\emph{work-item}) oblicza jeden piksel: czyta $k \times k$ pikseli z pamięci globalnej karty, mnoży je przez współczynniki maski z pamięci stałej i oblicza moduł. Przebieg programu:
 \begin{enumerate}
 	\item przesłanie obrazu z pamięci komputera do pamięci karty przez magistralę PCIe;
 	\item kernel splotu; w każdej grupie roboczej wątki wyznaczają wspólne maksimum w pamięci lokalnej, a jeden wątek grupy aktualizuje maksimum globalne operacją atomową;
@@ -208,11 +219,11 @@ Wersja W5 przenosi algorytm W1 bez zmian na kartę graficzną NVIDIA GeForce GTX
 \end{enumerate}
 Czas każdego etapu zostanie zmierzony osobno (zdarzenia profilujące OpenCL). Inicjalizacja (wybór urządzenia, kompilacja kernela) i przydział buforów na karcie odbędą się poza pomiarem.
 
-Liczba rdzeni karty jest stała, ale programista wybiera liczbę wątków uruchamianych na karcie oraz rozmiar grupy roboczej (wątków współdzielących pamięć lokalną i wykonywanych na jednym multiprocesorze). Zostanie zbadany wpływ rozmiaru grupy roboczej ($8\times8$, $16\times16$, $32\times8$, $32\times32$) i liczby pikseli liczonych przez jeden wątek (1--64, czyli od kilku milionów do kilkuset tysięcy wątków dla obrazu 4K). Karta tej klasy liczy w podwójnej precyzji około 32 razy wolniej niż w pojedynczej, dlatego moduł będzie liczony w podwójnej precyzji tylko wtedy, gdy pojedyncza nie zapewnia wyniku dokładnego; dodatkowo zostanie zmierzony wariant zawsze w pojedynczej precyzji z oceną różnicy wyniku. Oczekuje się, że przesył danych przez PCIe będzie stanowił część sekwencyjną ograniczającą zysk dla małych obrazów.
+Liczba rdzeni karty jest stała, ale programista wybiera liczbę wątków uruchamianych na karcie oraz rozmiar grupy roboczej (wątków współdzielących pamięć lokalną i wykonywanych na jednym multiprocesorze). Zostanie zbadany wpływ rozmiaru grupy roboczej ($8\times8$, $16\times16$, $32\times8$, $32\times32$) i liczby pikseli liczonych przez jeden wątek (1--64, czyli od ok. 8,3 mln do ok. 140 tys. wątków dla obrazu 4K). Karta tej klasy liczy w podwójnej precyzji około 32 razy wolniej niż w pojedynczej, dlatego moduł będzie liczony w podwójnej precyzji tylko wtedy, gdy pojedyncza nie zapewnia wyniku dokładnego; dodatkowo zostanie zmierzony wariant zawsze w pojedynczej precyzji z oceną różnicy wyniku. Oczekuje się, że przesył danych przez PCIe będzie stanowił część sekwencyjną ograniczającą zysk dla małych obrazów.
 
 \subsection{Zestawienie wersji}
 
-Tabela~\ref{tab:wersje} zestawia, co zmienia każda wersja względem W1, i jakie czynniki będą ograniczać jej przyspieszenie.
+Tabela~\ref{tab:wersje} zestawia, co zmienia każda wersja względem W1 i jakie czynniki będą ograniczać jej przyspieszenie.
 
 \begin{table}[ht]
 	\centering
@@ -232,18 +243,24 @@ Tabela~\ref{tab:wersje} zestawia, co zmienia każda wersja względem W1, i jakie
 	\end{tabularx}
 \end{table}
 
+\subsection{Metoda rozwiązania problemu optymalizacyjnego}
+
+Wartości zmiennych decyzyjnych zostaną dobrane przeglądem zupełnym siatki parametrów: dla każdej wersji zostaną zmierzone wszystkie zaplanowane kombinacje (np. dla W4 -- liczba wątków $\times$ strategia przydziału $\times$ rozmiar fragmentu), a za rozwiązanie zostanie przyjęta konfiguracja o najmniejszej medianie czasu. Wyniki zostaną zweryfikowane modelem analitycznym tam, gdzie on istnieje: przyspieszenie W4 zostanie porównane z prawem Amdahla~\eqref{eq:amdahl} dla dopasowanego udziału części sekwencyjnej, a czas W5 -- z sumą zmierzonych czasów przesyłu i obliczeń. Parametry, których wpływ jest niezależny, będą badane osobno, przy pozostałych ustawionych na wartości domyślne, aby liczba pomiarów nie rosła wykładniczo z liczbą parametrów.
+
+Wszystkie wersje mają dawać wynik dokładny, identyczny z W1. Jedynym rozwiązaniem przybliżonym jest wariant W5 liczący w pojedynczej precyzji. Jego dokładność zostanie oceniona eksperymentalnie: największą i średnią różnicą wyniku względem W1 na zestawie testowym. Przybliżony charakter ma też ocena jakości krawędzi przy progu dobranym optymalnie (punkt~\ref{sec:testy}); wynik zostanie opisany jako górne oszacowanie jakości osiąganej w praktyce.
+
 \subsection{Propozycje dalszych przyspieszeń z pomocą AI}
 
-Po wykonaniu pomiarów model językowy (Claude), mając dostęp do kodu i wyników, zaproponuje dalsze ulepszenia, których projekt jeszcze nie zawiera (np. wektorowe skalowanie we wszystkich wersjach, instrukcje AVX-512, duże strony pamięci, aktywne oczekiwanie wątków puli, równoległe kodowanie pliku wynikowego, nakładanie przesyłu i obliczeń na GPU). Propozycje zostaną opisane wraz z oczekiwanym zyskiem i uzasadnieniem, a wybrane -- sprawdzone pomiarem. W sprawozdaniu zostanie zaznaczone, że propozycje pochodzą od tego samego narzędzia, które wspierało implementację.
+Wymagania projektu dopuszczają użycie systemów sztucznej inteligencji do podpowiedzi ulepszeń. Po wykonaniu pomiarów model językowy (Claude), mając dostęp do kodu i wyników, zaproponuje dalsze ulepszenia, których projekt jeszcze nie zawiera (np. wektorowe skalowanie we wszystkich wersjach, instrukcje AVX-512, duże strony pamięci, aktywne oczekiwanie wątków puli, równoległe kodowanie pliku wynikowego, nakładanie przesyłu i obliczeń na GPU). Propozycje zostaną opisane wraz z uzasadnieniem opartym na pomiarach i szacunkiem zysku, wyraźnie oznaczonym jako szacunek; ich wdrożenie i zmierzenie wykracza poza zakres projektu. W sprawozdaniu zostanie zaznaczone, że propozycje pochodzą od tego samego narzędzia, które wspierało implementację.
 
 %======================================================================
 \section{Metoda, technologie i narzędzia implementacji}
 
 Program zostanie napisany w języku C++ (standard C++17) z wykorzystaniem biblioteki STL, w szczególności mechanizmów wielowątkowości: \kod{std::thread}, \kod{std::mutex}, \kod{std::condition\_variable} i \kod{std::atomic} \cite{williams,cppreference}. Wersja W3 użyje funkcji wewnętrznych kompilatora dla rozszerzenia AVX2 (\kod{immintrin.h}) \cite{intel}, kompilowanych tylko dla funkcji tej wersji, aby pozostała część programu działała na każdym procesorze x86-64. Wersja W5 użyje OpenCL~1.2 ze sterownikiem karty NVIDIA. Odczyt i zapis plików graficznych zrealizują jednoplikowe biblioteki \kod{stb\_image} i \kod{stb\_image\_write} \cite{stb}.
 
-Logika obliczeń zostanie zamknięta w bibliotece \kod{edge\_core}, w której wszystkie wersje są wywoływane przez jedną funkcję. Gwarantuje to identyczne granice pomiaru czasu dla wszystkich wersji. Pomiary wykona konsolowa aplikacja \kod{edge\_bench} oparta na module Qt~Core \cite{qt}, uruchamiana z pliku opisującego eksperyment (JSON) i zapisująca surowe wyniki do plików CSV wraz z opisem warunków pomiaru (procesor, kompilator, flagi, wersja kodu). Projekt będzie budowany narzędziem CMake kompilatorem GCC~13 w trybie Release (\kod{-O3}). Skrypty w języku Python (biblioteki NumPy, pandas, Matplotlib, Pillow) uruchomią eksperymenty kolejno, przetworzą wyniki i wygenerują wykresy oraz tabele; dokumentacja zostanie przygotowana w systemie \LaTeX.
+Logika obliczeń zostanie zamknięta w bibliotece \kod{edge\_core}, w której wszystkie wersje są wywoływane przez jedną funkcję. Gwarantuje to identyczne granice pomiaru czasu dla wszystkich wersji. Pomiary wykona konsolowa aplikacja \kod{edge\_bench} oparta na module Qt~Core \cite{qt}, uruchamiana z pliku opisującego eksperyment (JSON) i zapisująca surowe wyniki do plików CSV wraz z opisem warunków pomiaru (procesor, kompilator, flagi, wersja kodu). Projekt będzie budowany za pomocą CMake i kompilatora GCC~13 w trybie Release (optymalizacja \kod{-O3}). Skrypty w języku Python (biblioteki NumPy, pandas, Matplotlib, Pillow) uruchomią eksperymenty kolejno, przetworzą wyniki i wygenerują wykresy oraz tabele; dokumentacja zostanie przygotowana w systemie \LaTeX.
 
-Pomiary zostaną wykonane na komputerze z procesorem AMD Ryzen 9 9900X (12 rdzeni, 24 wątki sprzętowe, 2 bloki rdzeni po 32~MB pamięci L3, obsługa AVX2) i kartą graficzną NVIDIA GeForce GTX 1050 Ti (4~GB) pod systemem Ubuntu 24.04.
+Pomiary zostaną wykonane na komputerze z procesorem AMD Ryzen 9 9900X i kartą graficzną NVIDIA GeForce GTX 1050 Ti (4~GB) pod systemem Ubuntu 24.04. Procesor ma 12 rdzeni fizycznych i 24 wątki sprzętowe (SMT). Rdzenie są podzielone na 2 bloki (CCD) po 6 rdzeni, a każdy blok ma własną pamięć podręczną L3 o pojemności 32~MB. Każdy rdzeń ma 1~MB pamięci L2. Procesor obsługuje rozszerzenia AVX2 i AVX-512. Ta budowa ma znaczenie dla W4, ponieważ wątki z różnych bloków nie współdzielą pamięci L3, a dwa wątki sprzętowe jednego rdzenia współdzielą jego jednostki wykonawcze \cite{silberschatz}.
 
 %======================================================================
 \section{Sposób testowania i oceny jakości rozwiązań}
@@ -256,13 +273,20 @@ Pomiary zostaną wykonane na komputerze z procesorem AMD Ryzen 9 9900X (12 rdzen
 	\item \textbf{sam algorytm} -- od obrazu w pamięci do gotowego obrazu wynikowego; dla W5 łącznie z przesłaniem danych na kartę i z powrotem;
 	\item \textbf{cały program} -- wczytanie i zdekodowanie pliku obrazu, algorytm, zapis wyniku do pliku.
 \end{enumerate}
-Analiza skupi się na samym algorytmie, ale dla każdej wersji zostanie pokazany rozkład czasu całego programu na wczytanie obrazu, algorytm i zapis wyniku, ponieważ operacje plikowe są sekwencyjne i -- zgodnie z prawem Amdahla~\eqref{eq:amdahl} -- mogą ograniczać zysk całego programu bardziej niż sam algorytm. Czas algorytmu zostanie dodatkowo rozbity na etapy (splot, skalowanie, a dla W5 przesył do karty, obliczenia i przesył z karty).
+Analiza skupi się na samym algorytmie, ale dla każdej wersji zostanie pokazany rozkład czasu całego programu na wczytanie obrazu, algorytm i zapis wyniku, ponieważ operacje plikowe są sekwencyjne. Zgodnie z prawem Amdahla~\eqref{eq:amdahl} mogą one ograniczać zysk całego programu bardziej niż sam algorytm. Czas algorytmu zostanie dodatkowo rozbity na etapy (splot, skalowanie, a dla W5 przesył do karty, obliczenia i przesył z karty).
 
-Każda konfiguracja zostanie wykonana najpierw 1--2 razy bez zapisu wyniku (rozgrzewka), a następnie 15--21 razy. Jako wartość zostanie przyjęta mediana, a jako rozrzut -- zakres od minimum do maksimum \cite{hoefler}. Czas będzie mierzony zegarem \kod{std::chrono::steady\_clock}. Kolejność konfiguracji zostanie wylosowana ze stałym ziarnem, a pomiar uruchomiony tylko wtedy, gdy inne procesy zajmują mniej niż 5\,\% czasu procesora; regulator częstotliwości procesora zostanie ustawiony w tryb \emph{performance}. Przyspieszenie zawsze zostanie podane razem z czasem bezwzględnym wersji bazowej.
+Każda konfiguracja zostanie wykonana najpierw 1--2 razy bez zapisu wyniku (rozgrzewka: pierwsze wywołanie przydziela pamięć i ładuje kod do pamięci podręcznej), a następnie 11--15 razy z zapisem czasu. Jako wartość zostanie przyjęta mediana, a jako rozrzut -- zakres od minimum do maksimum, zgodnie z zaleceniami Hoeflera i Belli \cite{hoefler}. Mediana jest mniej wrażliwa niż średnia na pojedyncze pomiary wydłużone przez system operacyjny. Czas będzie mierzony zegarem monotonicznym \kod{std::chrono::steady\_clock}. Eksperymenty będą uruchamiane kolejno, nigdy dwa naraz, a każdy z nich rozpocznie się tylko wtedy, gdy inne procesy zajmują mniej niż 5\,\% czasu procesora. Regulator częstotliwości procesora zostanie ustawiony w tryb \emph{performance}, czyli bez obniżania częstotliwości przy małym obciążeniu. Każde przyspieszenie zostanie podane razem z czasem bezwzględnym wersji bazowej.
 
-\paragraph{Dane testowe.} Zdjęcie NASA Blue Marble ($21\,600 \times 10\,800$ pikseli) przeskalowane do 14 rozmiarów od $256 \times 144$ do $10\,240 \times 5\,760$ (0,04--59~Mpix), obrazy o tej samej liczbie pikseli i różnych proporcjach, zdjęcia z zestawu Kodak, obraz Lena oraz obrazy syntetyczne.
+\paragraph{Dane testowe.} Zdjęcie NASA Blue Marble ($21\,600 \times 10\,800$ pikseli) przeskalowane do 14 rozmiarów od $256 \times 144$ do $10\,240 \times 5\,760$ (0,04--59~Mpix), obrazy o tej samej liczbie pikseli i różnych proporcjach, zdjęcia z zestawu Kodak ($768 \times 512$) oraz obrazy syntetyczne z losowymi figurami. Duże obrazy posłużą do pomiarów czasu, a małe zdjęcia -- do sprawdzenia poprawności i do rysunków wyniku filtru.
 
-\paragraph{Plan eksperymentów.} Porównanie wersji W1--W5 dla obrazów HD, 4K i 8K i masek $3\times3$ i $7\times7$ (sam algorytm i cały program); wpływ rozmiaru maski na każdą wersję; dla W4 -- liczba wątków ($S(N)$, $E(N)$, dopasowanie prawa Amdahla), strategia przydziału i rozmiar fragmentu, sposób wyznaczania maksimum, pula w porównaniu z nowymi wątkami, przypisanie do rdzeni, cały program w funkcji liczby wątków; dla W5 -- rozkład czasu na przesył i obliczenia, liczba wątków i rozmiar grupy roboczej, precyzja; dla wszystkich wersji -- czas i przepustowość w funkcji rozmiaru obrazu oraz rozmiar obrazu, od którego dana wersja jest szybsza od W1.
+\paragraph{Plan eksperymentów.} Zaplanowano następujące eksperymenty:
+\begin{itemize}
+	\item porównanie wersji W1--W5 dla obrazów HD, 4K i 8K oraz masek $3\times3$ i $7\times7$, osobno dla samego algorytmu i całego programu;
+	\item wpływ rozmiaru i rodzaju maski na czas każdej wersji;
+	\item dla W4: przyspieszenie $S(N)$ i efektywność $E(N)$ w funkcji liczby wątków z dopasowaniem prawa Amdahla, strategia przydziału i rozmiar fragmentu, sposób wyznaczania maksimum, pula w porównaniu z nowymi wątkami, przypisanie do rdzeni oraz przyspieszenie całego programu w funkcji liczby wątków;
+	\item dla W5: rozkład czasu na przesył i obliczenia, liczba wątków i rozmiar grupy roboczej, precyzja obliczeń;
+	\item dla wszystkich wersji: czas i przepustowość w funkcji rozmiaru obrazu oraz rozmiar obrazu, od którego dana wersja jest szybsza od W1.
+\end{itemize}
 
 \paragraph{Jakość wykrywania krawędzi.} Zostanie sprawdzone, czy większa maska daje lepszy wynik. Na syntetycznym obrazie z figurami o stałej jasności, dla którego położenie krawędzi jest znane co do piksela, zostanie dodany szum gaussowski o odchyleniu standardowym $\sigma$ od 0 do 40 poziomów szarości. Wynik każdej maski zostanie zamieniony na obraz binarny progowaniem (próg dobierany osobno dla każdej maski i poziomu szumu tak, aby dawał najlepszy wynik, co porównuje maski w ich najlepszym ustawieniu) i porównany z prawdziwymi krawędziami miarą Pratta \cite{pratt}:
 \begin{equation}
@@ -274,8 +298,11 @@ gdzie $N_I$ -- liczba prawdziwych pikseli krawędzi, $N_D$ -- liczba wykrytych, 
 
 %======================================================================
 \begin{thebibliography}{99}
+	\bibitem{wojcik}
+	Wójcik R., \emph{Zarządzanie w systemach i sieciach komputerowych}, materiały do wykładu, Wykład~2: Zasoby i procesy w systemach i sieciach komputerowych, Politechnika Wrocławska, Wrocław, 2026.
+
 	\bibitem{gonzalez}
-	Gonzalez R.~C., Woods R.~E., \emph{Digital Image Processing}, 4th ed., Pearson, 2018.
+	Gonzalez R.~C., Woods R.~E., \emph{Digital Image Processing}, 4th ed., Pearson, New York, 2018.
 
 	\bibitem{tadeusiewicz}
 	Tadeusiewicz R., Korohoda P., \emph{Komputerowa analiza i przetwarzanie obrazów}, Wydawnictwo Fundacji Postępu Telekomunikacji, Kraków, 1997.
@@ -283,8 +310,17 @@ gdzie $N_I$ -- liczba prawdziwych pikseli krawędzi, $N_D$ -- liczba wykrytych, 
 	\bibitem{czech}
 	Czech Z., \emph{Wprowadzenie do obliczeń równoległych}, PWN, Warszawa, 2010.
 
+	\bibitem{blazewicz}
+	Błażewicz J., \emph{Problemy optymalizacji kombinatorycznej}, PWN, Warszawa, 1996.
+
+	\bibitem{karbowski}
+	Karbowski A., Niewiadomska-Szynkiewicz E. (red.), \emph{Programowanie równoległe i rozproszone}, Oficyna Wydawnicza Politechniki Warszawskiej, Warszawa, 2009.
+
+	\bibitem{silberschatz}
+	Silberschatz A., Peterson J.~L., Gagne G., \emph{Podstawy systemów operacyjnych}, WNT, Warszawa, 2005.
+
 	\bibitem{williams}
-	Williams A., \emph{C++ Concurrency in Action}, 2nd ed., Manning, 2019.
+	Williams A., \emph{C++ Concurrency in Action}, 2nd ed., Manning, Shelter Island, 2019.
 
 	\bibitem{openmp}
 	OpenMP Architecture Review Board, \emph{OpenMP Application Programming Interface}, Version 5.2, 2021.

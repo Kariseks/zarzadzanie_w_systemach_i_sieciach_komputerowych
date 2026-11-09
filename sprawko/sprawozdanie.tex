@@ -121,7 +121,7 @@
 \clearpage
 
 % Sprawozdanie = punkty 1–6 opisu założeń (zalozenia.tex), rozwinięte, w czasie przeszłym
-% + punkt 7 „Realizacja projektu i wyniki” + literatura (materialy/projekt_zssk_2024.pdf).
+% + punkt 7 „Realizacja projektu i wyniki” + literatura (materialy/projekt/projekt_zssk_2024.pdf).
 % Zasady pisania: CLAUDE.md; przedstawianie wyników: .claude/skills/prezentacja-wynikow.
 % Liczby pomiarowe wyłącznie przez \wynik{...}; miejsca do uzupełnienia: \douzup{...}.
 
@@ -131,6 +131,8 @@
 Temat: Mechanizmy zarządzania wątkami programowymi w zadaniu wykrywania krawędzi na obrazach cyfrowych z wykorzystaniem operatorów gradientowych (Sobela i pokrewnych).
 
 Celem projektu było zaprojektowanie i zaimplementowanie programu wykrywającego krawędzie na obrazie cyfrowym w pięciu wersjach oraz zmierzenie, ile czasu przetwarzania oszczędza każdy rodzaj przyspieszenia. Wersja W1 jest prostą implementacją sekwencyjną i stanowi punkt odniesienia. Każda z wersji W2--W5 bierze kod W1 i wprowadza do niego jeden rodzaj przyspieszenia. Wersja W2 nie korzysta z równoległości: zmienia algorytm i sposób korzystania z pamięci, aby sprawdzić, ile daje sama optymalizacja kodu na jednym rdzeniu. Wersje W3--W5 odpowiadają kolejnym poziomom przetwarzania równoległego \cite{czech}: równoległości na poziomie instrukcji procesora, czyli SIMD (W3), równoległości wątków na wielu rdzeniach procesora (W4) i masowej równoległości danych na setkach rdzeni karty graficznej (W5). Wersji nie łączono ze sobą. Każdą porównano z W1, więc zmierzony zysk pokazuje wkład jednego mechanizmu, a nie sumę kilku.
+
+W ujęciu przedmiotu jest to problem zarządzania zasobami obliczeniowymi komputera: rdzeniami procesora i ich wątkami sprzętowymi, pamięcią podręczną i operacyjną oraz kartą graficzną. Program musi rozdzielić pracę (wiersze obrazu albo piksele) pomiędzy te zasoby, zsynchronizować wątki i ograniczyć przesyłanie danych tak, aby czas przetwarzania był jak najkrótszy, a wynik pozostał poprawny. Najwięcej uwagi poświęcono wersji W4, w której te decyzje podejmuje własny mechanizm zarządzania wątkami (pula wątków i scheduler).
 
 Zakres projektu objął:
 \begin{itemize}
@@ -153,7 +155,7 @@ Problem rozwiązywano przy następujących założeniach:
 	\item piksele leżące poza brzegiem obrazu zastępuje się najbliższym pikselem brzegowym (powielenie krawędzi);
 	\item wynikiem jest obraz 8-bitowy o tych samych wymiarach co wejście;
 	\item najmniejszą jednostką podziału pracy pomiędzy wątki procesora jest wiersz obrazu, a pomiędzy wątki karty graficznej -- piksel;
-	\item wszystkie wersje muszą dawać wynik identyczny co do bitu z wynikiem wersji W1.
+	\item wszystkie wersje muszą dawać wynik identyczny co do bitu z wynikiem wersji W1; jedynym wyjątkiem jest pomocniczy wariant GPU liczący zawsze w pojedynczej precyzji, dla którego dopuszczono różnicę o 1 poziom szarości.
 \end{itemize}
 
 Problem obliczeniowy \cite{gonzalez,tadeusiewicz}: dla obrazu $I$ o wymiarach $W \times H$ i pary masek $K_x$, $K_y$ o rozmiarze $k \times k$ wyznaczyć dla każdego piksela moduł gradientu
@@ -161,27 +163,34 @@ Problem obliczeniowy \cite{gonzalez,tadeusiewicz}: dla obrazu $I$ o wymiarach $W
 	G(x, y) = \sqrt{G_x(x, y)^{2} + G_y(x, y)^{2}}, \qquad G_x = K_x * I, \qquad G_y = K_y * I,
 	\label{eq:gradient}
 \end{equation}
-gdzie $*$ oznacza dwuwymiarowy splot dyskretny
+gdzie $*$ oznacza dwuwymiarowy splot dyskretny w postaci przyjętej w przetwarzaniu obrazów \cite{gonzalez}
 \begin{equation}
 	(K * I)(x, y) = \sum_{i=0}^{k-1} \sum_{j=0}^{k-1} K(i, j)\; I\!\left(x + j - \lfloor k/2 \rfloor,\; y + i - \lfloor k/2 \rfloor\right),
 \end{equation}
-a następnie przeskalować wynik do zakresu 0--255: $O(x, y) = \operatorname{round}\big(255 \cdot G(x, y) / \max G\big)$. Skalowanie względem największej wartości w obrazie wymaga znajomości $\max G$, czyli zakończenia obliczeń dla całego obrazu przed zapisaniem pierwszego piksela wyniku. Jako warianty pomocnicze zbadano skalowanie stałe (względem teoretycznego maksimum maski) i obcięcie wartości większych od 255, które tego wymagania nie mają.
+Formalnie wzór~(2) opisuje korelację, ponieważ maska nie jest odwrócona. Dla masek gradientowych odwrócenie zmienia tylko znak $G_x$ i $G_y$, a nie moduł $G$, więc wynik jest ten sam. Należy następnie przeskalować wynik do zakresu 0--255: $O(x, y) = \operatorname{round}\big(255 \cdot G(x, y) / \max G\big)$. Skalowanie względem największej wartości w obrazie wymaga znajomości $\max G$, czyli zakończenia obliczeń dla całego obrazu przed zapisaniem pierwszego piksela wyniku. Jako warianty pomocnicze zbadano skalowanie stałe (względem teoretycznego maksimum maski) i obcięcie wartości większych od 255, które tego wymagania nie mają.
+
+Parametrami problemu są:
+\begin{itemize}
+	\item dane wejściowe: wymiary obrazu $W \times H$, maska (rodzaj i rozmiar $k$), sposób skalowania wyniku;
+	\item zasoby sprzętowe: liczba rdzeni procesora i wątków sprzętowych, pojemność pamięci podręcznej, liczba rdzeni karty graficznej;
+	\item zmienne decyzyjne, czyli sposób zarządzania zasobami: wersja programu, liczba wątków $N$, strategia przydziału wierszy do wątków i rozmiar fragmentu $c$, sposób synchronizacji przy wyznaczaniu maksimum, pula wątków albo nowe wątki, przypisanie wątków do rdzeni, a dla karty graficznej -- rozmiar grupy roboczej, liczba pikseli na wątek i precyzja obliczeń.
+\end{itemize}
+Ograniczeniami są: wynik identyczny co do bitu z W1 (z wyjątkiem wariantu GPU w pojedynczej precyzji, dla którego dopuszczono różnicę o 1 poziom szarości), liczba wątków sprzętowych procesora (24) i rdzeni karty (768), pojemność pamięci karty (4~GB) oraz bariera wynikająca ze skalowania względem maksimum: drugi etap nie może się rozpocząć, zanim pierwszy nie zakończy się dla całego obrazu.
 
 Problem decyzyjny: czy dla danego obrazu, maski i sprzętu istnieje wersja programu i jej konfiguracja (liczba wątków, strategia przydziału pracy, rozmiar fragmentu, rozmiar grupy roboczej GPU), dla której czas przetwarzania nie przekracza zadanej wartości $T_{\max}$?
 
-Problem optymalizacyjny \cite{czech}: dla każdej wersji dobrać parametry tak, aby zapewnić optymalne wartości następujących kryteriów:
+Problem optymalizacyjny \cite{czech}: dla każdej wersji dobrać wartości zmiennych decyzyjnych tak, aby zapewnić optymalne wartości następujących kryteriów:
 \begin{itemize}
 	\item czas zegarowy przetwarzania obrazu -- minimum;
 	\item przyspieszenie względem wersji W1, $S = T_{W1} / T_{Wi}$ -- maksimum;
 	\item dla wersji wielowątkowej: przyspieszenie $S(N) = T(1)/T(N)$ i efektywność $E(N) = S(N)/N$ -- maksimum; nierównowaga obciążenia wątków (różnica czasów zakończenia pracy) -- minimum;
-	\item zgodność wyniku z wersją W1 -- wynik identyczny co do bitu.
 \end{itemize}
 Osobnym kryterium jest jakość wykrywania krawędzi. Zależy ona od wyboru maski, a nie od wersji programu, ponieważ wszystkie wersje dają ten sam wynik. Dlatego zbadano ją oddzielnie, w punkcie~\ref{sec:jakosc}.
 
 %======================================================================
 \section{Analiza złożoności obliczeniowej problemu}
 
-Wyznaczenie modułu gradientu jest problemem z klasy P: istnieje algorytm deterministyczny o złożoności wielomianowej, który oblicza wynik dokładnie, bez przeszukiwania przestrzeni rozwiązań. Splot dwuwymiarowy wymaga dla każdego piksela $k^2$ mnożeń z dodawaniem dla $G_x$ i tyle samo dla $G_y$, czyli $2k^2$ operacji. Całe zadanie ma więc złożoność $O(W H k^{2})$, liniową względem liczby pikseli. Maski Sobela, Prewitta i Scharra są rozdzielne: każdą z nich można zapisać jako iloczyn wektora wygładzającego $s$ i różnicującego $d$, np. dla Sobela $3\times3$:
+Wyznaczenie modułu gradientu jest problemem obliczeniowym rozwiązywalnym w czasie wielomianowym, czyli z klasy P (ściślej FP, ponieważ wynikiem jest obraz, a nie odpowiedź tak/nie): istnieje algorytm deterministyczny o złożoności wielomianowej, który oblicza wynik dokładnie, bez przeszukiwania przestrzeni rozwiązań. Splot dwuwymiarowy wymaga dla każdego piksela $k^2$ mnożeń z dodawaniem dla $G_x$ i tyle samo dla $G_y$, czyli $2k^2$ operacji. Całe zadanie ma więc złożoność $O(W H k^{2})$, liniową względem liczby pikseli. Maski Sobela, Prewitta i Scharra są rozdzielne: każdą z nich można zapisać jako iloczyn wektora wygładzającego $s$ i różnicującego $d$, np. dla Sobela $3\times3$:
 \begin{equation}
 	K_x = s^{T} d = \begin{bmatrix} 1 \\ 2 \\ 1 \end{bmatrix} \begin{bmatrix} -1 & 0 & 1 \end{bmatrix},
 	\qquad K_y = d^{T} s.
@@ -193,7 +202,9 @@ Wartość każdego piksela wyniku zależy wyłącznie od jego otoczenia w obrazi
 	S(N) \le \frac{1}{s + \dfrac{1 - s}{N}}, \qquad \lim_{N \to \infty} S(N) = \frac{1}{s},
 	\label{eq:amdahl}
 \end{equation}
-gdzie $s$ oznacza udział części sekwencyjnej w czasie wykonania na jednej jednostce. W tym zadaniu część sekwencyjną tworzą: wczytanie i dekodowanie pliku obrazu, zapis wyniku, przydział buforów, redukcja maksimum i bariera między etapami, a w wersji GPU -- przesłanie obrazu na kartę i wyniku z powrotem. Drugim ograniczeniem jest przepustowość pamięci. Splot $3 \times 3$ wykonuje około 18 operacji na piksel, a jednocześnie przesyła z pamięci i do pamięci około 6~B na piksel, czyli zaledwie około 3 operacje na bajt danych. Po przyspieszeniu obliczeń czas może więc zależeć bardziej od szybkości odczytu i zapisu pamięci niż od mocy obliczeniowej, szczególnie gdy obraz nie mieści się w pamięci podręcznej.
+gdzie $s$ oznacza udział części sekwencyjnej w czasie wykonania na jednej jednostce. W notacji wykładu \cite{wojcik} przyspieszenie oznacza się $A_p$, a liczbę procesorów $p$; w tym dokumencie odpowiadają im $S(N)$ i liczba wątków $N$. W tym zadaniu część sekwencyjną tworzą: wczytanie i dekodowanie pliku obrazu, zapis wyniku, przydział buforów, redukcja maksimum i bariera między etapami, a w wersji GPU -- przesłanie obrazu na kartę i wyniku z powrotem. Drugim ograniczeniem jest przepustowość pamięci. Splot $3 \times 3$ wykonuje około 18 operacji na piksel, a jednocześnie przesyła z pamięci i do pamięci około 6~B na piksel, czyli zaledwie około 3 operacje na bajt danych. Po przyspieszeniu obliczeń czas może więc zależeć bardziej od szybkości odczytu i zapisu pamięci niż od mocy obliczeniowej, szczególnie gdy obraz nie mieści się w pamięci podręcznej.
+
+Problem zarządzania, czyli wybór konfiguracji, ma inny charakter niż samo obliczenie. Problem decyzyjny i optymalizacyjny z punktu~2 dotyczą skończonego, niewielkiego zbioru konfiguracji (kilka wersji, do 48 wątków, 4 strategie przydziału, kilka rozmiarów fragmentu i grupy roboczej), więc rozwiązano je dokładnie przeglądem zupełnym, w czasie wielomianowym względem liczby wartości każdego parametru. Trudność nie leży w złożoności obliczeniowej, ale w tym, że wartość kryterium (czas) nie wynika ze wzoru i trzeba ją zmierzyć dla każdej konfiguracji z powtórzeniami. Podproblem przydziału wierszy do wątków jest problemem szeregowania zadań na $N$ identycznych procesorach z kryterium długości uszeregowania ($P\,||\,C_{\max}$) \cite{blazewicz}. Gdy wszystkie wiersze wymagają tyle samo pracy, optymalny jest równy podział (po $\lceil H/N \rceil$ wierszy na wątek), co realizuje strategia \emph{static}. W rzeczywistości czas wiersza zależy od chwilowej dostępności rdzenia (inne procesy, SMT, przerwania), a problem $P\,||\,C_{\max}$ z różnymi czasami zadań jest NP-trudny. Dlatego strategie \emph{dynamic} i \emph{guided} stosują szeregowanie listowe: zadanie trafia do pierwszego wolnego wątku. Jest to heurystyka, która daje uszeregowanie co najwyżej $2 - 1/N$ razy dłuższe od optymalnego \cite{blazewicz}.
 
 Liczbę operacji i sposób zrównoleglenia w poszczególnych wersjach zestawiono w tabeli~\ref{tab:zlozonosc}.
 
@@ -202,15 +213,15 @@ Liczbę operacji i sposób zrównoleglenia w poszczególnych wersjach zestawiono
 	\caption{Złożoność i równoległość wersji programu (obraz $W \times H$, maska $k \times k$, $N$ wątków procesora, $P$ rdzeni karty graficznej).}
 	\label{tab:zlozonosc}
 	\small
-	\begin{tabularx}{\textwidth}{@{}lLLl@{}}
+	\begin{tabularx}{\textwidth}{@{}lLLL@{}}
 		\toprule
-		Wersja & Operacje na piksel & Równoległość & Czas (rząd) \\
+		Wersja & Operacje na piksel & Równoległość & Złożoność i oczekiwany czas \\
 		\midrule
 		W1 & $2k^2$ mnożeń, $2k^2$ obcięć współrzędnych & brak & $O(WHk^2)$ \\
 		W2 & $4k$ mnożeń (rozdzielne), bez obcięć we wnętrzu & brak & $O(WHk)$ \\
-		W3 & $2k^2$ mnożeń wykonywanych po 8 naraz & 8 pikseli na instrukcję (AVX2) & $O(WHk^2/8)$ \\
-		W4 & $2k^2$ mnożeń, jak W1 & $N$ wątków na rdzeniach CPU & $O(WHk^2/N)$ + część sekwencyjna \\
-		W5 & $2k^2$ mnożeń, jak W1 & do kilku milionów wątków GPU na 768 rdzeniach & $O(WHk^2/P)$ + przesył danych \\
+		W3 & $2k^2$ mnożeń wykonywanych po 8 naraz & 8 pikseli na instrukcję (AVX2) & $O(WHk^2)$, czas do 8 razy krótszy \\
+		W4 & $2k^2$ mnożeń, jak W1 & $N$ wątków na rdzeniach CPU & $O(WHk^2)$ pracy, czas do $N$ razy krótszy, ograniczony częścią sekwencyjną \\
+		W5 & $2k^2$ mnożeń, jak W1 & do kilku milionów wątków GPU na 768 rdzeniach & $O(WHk^2)$ pracy rozłożonej na $P$ rdzeni, plus przesył danych \\
 		\bottomrule
 	\end{tabularx}
 \end{table}
@@ -261,7 +272,7 @@ Wersja W4 wykonuje kod W1 bez zmian (to samo jądro obliczeniowe), ale dzieli ob
 	\item redukcja lokalnych maksimów do maksimum globalnego, a następnie równoległe skalowanie wyniku.
 \end{enumerate}
 
-Wątki są tworzone raz i utrzymywane w puli (\emph{thread pool}): między etapami czekają uśpione na zmiennej warunkowej (\kod{std::condition\_variable}) i są budzone, gdy pojawia się praca. Przydziałem fragmentów zarządza scheduler oferujący cztery strategie wzorowane na klauzuli \kod{schedule} standardu OpenMP \cite{openmp}:
+Wątki są tworzone raz i utrzymywane w puli (\emph{thread pool}): między etapami czekają uśpione na zmiennej warunkowej (\kod{std::condition\_variable}) i są budzone, gdy pojawia się praca \cite{karbowski,williams}. Przydziałem fragmentów zarządza scheduler oferujący cztery strategie wzorowane na klauzuli \kod{schedule} standardu OpenMP \cite{openmp}:
 \begin{itemize}
 	\item \emph{static} -- obraz dzielony na $N$ równych bloków, po jednym na wątek; brak narzutu, ale wątek opóźniony przez system wydłuża cały etap;
 	\item \emph{cyclic} -- fragmenty po $c$ wierszy przydzielane kolejnym wątkom po kolei (fragment $i$ dla wątku $i \bmod N$);
@@ -281,7 +292,7 @@ W wersji W4 zbadano następujące mechanizmy zarządzania wątkami:
 
 \subsection{Wersja W5 -- karta graficzna (OpenCL)}
 
-Wersja W5 przenosi algorytm W1 bez zmian na kartę graficzną NVIDIA GeForce GTX 1050 Ti (768 rdzeni CUDA w 6 multiprocesorach) przy użyciu standardu OpenCL \cite{opencl}. Każdy wątek karty (\emph{work-item}) oblicza jeden piksel: czyta $k \times k$ pikseli z pamięci globalnej karty, mnoży je przez współczynniki maski z pamięci stałej i oblicza moduł. Przebieg programu:
+Wersja W5 przenosi algorytm W1 bez zmian na kartę graficzną NVIDIA GeForce GTX 1050 Ti (768 rdzeni CUDA w 6 multiprocesorach) przy użyciu standardu OpenCL \cite{opencl}. W podstawowej konfiguracji każdy wątek karty (\emph{work-item}) oblicza jeden piksel: czyta $k \times k$ pikseli z pamięci globalnej karty, mnoży je przez współczynniki maski z pamięci stałej i oblicza moduł. Przebieg programu:
 \begin{enumerate}
 	\item przesłanie obrazu z pamięci komputera do pamięci karty przez magistralę PCIe;
 	\item kernel splotu; w każdej grupie roboczej wątki wyznaczają wspólne maksimum w pamięci lokalnej, a jeden wątek grupy aktualizuje maksimum globalne operacją atomową;
@@ -292,6 +303,12 @@ Wersja W5 przenosi algorytm W1 bez zmian na kartę graficzną NVIDIA GeForce GTX
 Inicjalizacja (wybór urządzenia, kompilacja kernela) i przydział buforów na karcie odbywają się raz, przed pomiarem.
 
 Liczba rdzeni karty jest stała, ale programista wybiera liczbę wątków uruchamianych na karcie oraz rozmiar grupy roboczej (wątków współdzielących pamięć lokalną i wykonywanych na jednym multiprocesorze). Wątek może liczyć kilka pikseli: piksele $x_0, x_0 + G, x_0 + 2G, \ldots$, gdzie $G$ to liczba wątków w wierszu, dzięki czemu sąsiednie wątki zawsze czytają sąsiednie piksele i odczyty z pamięci łączą się w większe transakcje. Karta tej klasy liczy w podwójnej precyzji około 32 razy wolniej niż w pojedynczej, dlatego moduł jest liczony w podwójnej precyzji tylko wtedy, gdy pojedyncza nie zapewnia wyniku dokładnego; dodatkowo zmierzono wariant zawsze w pojedynczej precyzji.
+
+\subsection{Metoda rozwiązania problemu optymalizacyjnego}
+
+Wartości zmiennych decyzyjnych dobrano przeglądem zupełnym siatki parametrów: dla każdej wersji zmierzono wszystkie zaplanowane kombinacje (np. dla W4 -- liczba wątków $\times$ strategia przydziału $\times$ rozmiar fragmentu), a za rozwiązanie przyjęto konfigurację o najmniejszej medianie czasu. Wyniki zweryfikowano modelem analitycznym tam, gdzie on istnieje: przyspieszenie W4 porównano z prawem Amdahla~\eqref{eq:amdahl} dla dopasowanego udziału części sekwencyjnej, a czas W5 -- z sumą zmierzonych czasów przesyłu i obliczeń. Parametry, których wpływ jest niezależny, badano osobno, przy pozostałych ustawionych na wartości domyślne, aby liczba pomiarów nie rosła wykładniczo z liczbą parametrów.
+
+Wszystkie wersje dają wynik dokładny, identyczny z W1. Jedynym rozwiązaniem przybliżonym jest wariant W5 liczący w pojedynczej precyzji. Jego dokładność oceniono eksperymentalnie: największą różnicą wyniku względem W1 na zestawie testowym (punkt~\ref{sec:popr}). Przybliżony charakter ma też ocena jakości krawędzi przy progu dobranym optymalnie (punkt~\ref{sec:jakosc}); wynik należy traktować jako górne oszacowanie jakości osiąganej w praktyce.
 
 \subsection{Zestawienie wersji}
 
@@ -323,7 +340,7 @@ Program napisano w języku C++ (standard C++17) z wykorzystaniem biblioteki STL,
 
 Logika obliczeń jest zamknięta w bibliotece \kod{edge\_core}, w której wszystkie wersje są wywoływane przez jedną funkcję, co gwarantuje identyczne granice pomiaru czasu. Pomiary wykonuje konsolowa aplikacja \kod{edge\_bench} oparta na module Qt~Core \cite{qt}, uruchamiana z pliku opisującego eksperyment (JSON) i zapisująca surowe wyniki do plików CSV wraz z opisem warunków pomiaru (procesor, kompilator, flagi, wersja kodu). Projekt budowano za pomocą CMake i kompilatora GCC~13 w trybie Release (optymalizacja \kod{-O3}). Skrypty w języku Python (biblioteki NumPy, pandas, Matplotlib, Pillow) uruchamiały eksperymenty kolejno, przetwarzały wyniki i generowały wszystkie wykresy, tabele i liczby zawarte w tym sprawozdaniu; dokumentację przygotowano w systemie \LaTeX.
 
-Programy uruchamiano na komputerze z procesorem AMD Ryzen 9 9900X i kartą graficzną NVIDIA GeForce GTX 1050 Ti (4~GB) pod systemem Ubuntu 24.04. Procesor ma 12 rdzeni fizycznych i 24 wątki sprzętowe (SMT). Rdzenie są podzielone na 2 bloki (CCD) po 6 rdzeni, a każdy blok ma własną pamięć podręczną L3 o pojemności 32~MB. Każdy rdzeń ma 1~MB pamięci L2. Procesor obsługuje rozszerzenia AVX2 i AVX-512. Ta budowa jest istotna przy interpretacji wyników W4: wątki z różnych bloków nie współdzielą pamięci L3.
+Programy uruchamiano na komputerze z procesorem AMD Ryzen 9 9900X i kartą graficzną NVIDIA GeForce GTX 1050 Ti (4~GB) pod systemem Ubuntu 24.04. Procesor ma 12 rdzeni fizycznych i 24 wątki sprzętowe (SMT). Rdzenie są podzielone na 2 bloki (CCD) po 6 rdzeni, a każdy blok ma własną pamięć podręczną L3 o pojemności 32~MB. Każdy rdzeń ma 1~MB pamięci L2. Procesor obsługuje rozszerzenia AVX2 i AVX-512. Ta budowa jest istotna przy interpretacji wyników W4: wątki z różnych bloków nie współdzielą pamięci L3, a dwa wątki sprzętowe jednego rdzenia współdzielą jego jednostki wykonawcze \cite{silberschatz}.
 
 %======================================================================
 \section{Sposób testowania i oceny jakości rozwiązań}
@@ -369,6 +386,7 @@ Liczba powtórzeń wynosiła 15 w większości eksperymentów i 11 w eksperyment
 Część konfiguracji miała współczynnik zmienności czasu powyżej 5\,\%, w najgorszym przypadku około 22\,\%. Dotyczyło to prawie wyłącznie wersji W4 przy czasach rzędu pojedynczych milisekund oraz bardzo małych obrazów: krótkie przerwy wynikające z pracy planisty systemu operacyjnego stanowią wtedy dużą część mierzonego czasu, a jeden opóźniony wątek opóźnia cały etap. Z tego powodu podawana jest mediana, a nie średnia, i dlatego różnic mniejszych niż około 10\,\% między konfiguracjami W4 nie interpretowano jako istotnych.
 
 \subsection{Poprawność}
+\label{sec:popr}
 
 Przed pomiarami uruchomiono weryfikację wszystkich wersji względem W1. Obejmowała ona 10\,368 przypadków: obrazy od $1\times1$ do zdjęć, 6 masek i 3 sposoby skalowania, a dla W4 i W5 także różne liczby wątków, harmonogramy, rozmiary fragmentu, rozmiary grupy roboczej i liczby pikseli na wątek GPU. Wszystkie wersje dały wynik identyczny co do bitu z W1. Dla W5 dopuszczono różnicę o 1 poziom szarości, ale w trybie dokładnym nie wystąpiła ani razu. W trybie zawsze pojedynczej precyzji największa różnica wyniosła \wynik{e5/fp32/maks-roznica} poziom szarości.
 
@@ -379,14 +397,14 @@ Czasy samego algorytmu dla wszystkich wersji przedstawiono na rysunku~\ref{fig:e
 \begin{figure}[!htbp]
 	\centering
 	\rys{e1_wersje_sobel3}
-	\caption{Czas samego algorytmu dla wersji W1--W5 (maska Sobela $3\times3$, obrazy HD, 4K i 8K); mediana z \wynik{meta/e1/powtorzenia} powtórzeń, słupki błędu: min--maks; w nawiasie przyspieszenie względem W1. W4: 24 wątki.}
+	\caption{Czas samego algorytmu dla wersji W1--W5 (maska Sobela $3\times3$; od góry obrazy HD, 4K i 8K, każdy panel z własną skalą czasu); mediana z \wynik{meta/e1/powtorzenia} powtórzeń, słupki błędu: min--maks; w nawiasie przyspieszenie względem W1. W4: 24 wątki.}
 	\label{fig:e1}
 \end{figure}
 
 \begin{figure}[!htbp]
 	\centering
 	\rys{e1_wersje_maski}
-	\caption{Czas samego algorytmu dla masek Sobela $3\times3$ i $7\times7$ (obraz 4K); skala logarytmiczna.}
+	\caption{Czas samego algorytmu dla masek Sobela $3\times3$ (górny panel) i $7\times7$ (dolny panel), obraz 4K; wspólna oś czasu w skali logarytmicznej.}
 	\label{fig:e1maski}
 \end{figure}
 
@@ -418,7 +436,7 @@ Rysunek~\ref{fig:e1b} porównuje czas całego programu dla wszystkich wersji, a 
 \begin{figure}[!htbp]
 	\centering
 	\rys{e1b_calosc_sobel3}
-	\caption{Czas całego programu: wczytanie pliku obrazu, algorytm i zapis wyniku w formacie JPG (maska Sobela $3\times3$); na końcu słupka czas całkowity i przyspieszenie całego programu względem W1.}
+	\caption{Czas całego programu: wczytanie pliku obrazu, algorytm i zapis wyniku w formacie JPG (maska Sobela $3\times3$; obraz 4K w górnym, 8K w dolnym panelu); na końcu słupka czas całkowity i przyspieszenie całego programu względem W1.}
 	\label{fig:e1b}
 \end{figure}
 
@@ -426,7 +444,7 @@ Rysunek~\ref{fig:e1b} porównuje czas całego programu dla wszystkich wersji, a 
 	\centering
 	\caption{Składniki czasu całego programu dla obrazu 4K (JPG) i przyspieszenie $S$ samego algorytmu oraz całego programu względem W1.}
 	\label{tab:e1b}
-	\small
+	\small\setlength{\tabcolsep}{3.5pt}
 	\tab{e1b_calosc}
 \end{table}
 
@@ -465,7 +483,7 @@ Wczytanie i zapis obrazu okazały się dłuższe niż sam algorytm nawet w wersj
 
 Wczytanie i zapis nie zależą od wersji algorytmu, więc stanowią część sekwencyjną w rozumieniu prawa Amdahla~\eqref{eq:amdahl}. W rezultacie W3, W4 i W5, które przyspieszyły sam algorytm 9--12$\times$, przyspieszyły cały program tylko \wynik{e1b/W3/4k-jpg/sobel3/przysp-calosc}--\wynik{e1b/W5/4k-jpg/sobel3/przysp-calosc}$\times$ (tabela~\ref{tab:e1b}). W wersji W5 algorytm stanowił już tylko \wynik{e1b/W5/4k-jpg/sobel3/udzial-algorytmu}\,\% czasu całego programu, a wczytanie i zapis -- \wynik{e1b/W5/4k-jpg/sobel3/udzial-io}\,\%. Dla maski $7\times7$, przy której algorytm W1 trwa dłużej, cały program z W2 przyspieszył \wynik{e1b/W2/4k-jpg/sobel7/przysp-calosc}$\times$. Dalsze przyspieszanie samego algorytmu nie skróci więc odczuwalnie całego programu. Większy zysk dałoby przyspieszenie zapisu (punkt~\ref{sec:ai}).
 
-Rozkład czasu samego algorytmu (prawe panele rysunków~\ref{fig:rozkladW1}--\ref{fig:rozkladW5}) pokazuje, co ogranicza każdą wersję. W W1 i W2 prawie cały czas zajmuje splot. Skalowanie do 0--255 trwało w W1 \wynik{e1/W1/4k/sobel3/skalowanie}~ms z \wynik{e1/W1/4k/sobel3/czas}~ms. W W2, która nie zmienia skalowania, ten sam etap (\wynik{e1/W2/4k/sobel3/skalowanie}~ms) stanowi już około 20\,\% czasu. W3 liczy wektorowo również skalowanie, które trwa w niej \wynik{e1/W3/4k/sobel3/skalowanie}~ms. W W4 splot i skalowanie dzielą się pomiędzy wątki, ale przydział i zerowanie buforów nie, więc rośnie udział etapu „pozostałe”: dla 4K \wynik{e1/W4/4k/sobel3/udzial-pozostale}\,\%, a dla 8K już \wynik{e1/W4/8k/sobel3/udzial-pozostale}\,\%. W W5 czas przesłania obrazu na kartę (\wynik{e1/W5/4k/sobel3/przesyl-do}~ms) i wyniku z powrotem (\wynik{e1/W5/4k/sobel3/przesyl-z}~ms) jest kilkukrotnie krótszy od obliczeń na karcie (\wynik{e1/W5/4k/sobel3/kernel}~ms).
+Rozkład czasu samego algorytmu (prawe panele rysunków~\ref{fig:rozkladW1}--\ref{fig:rozkladW5}) pokazuje, co ogranicza każdą wersję. W W1 prawie cały czas zajmuje splot: skalowanie do 0--255 trwało w niej \wynik{e1/W1/4k/sobel3/skalowanie}~ms z \wynik{e1/W1/4k/sobel3/czas}~ms. W W2, która nie zmienia skalowania, ten sam etap (\wynik{e1/W2/4k/sobel3/skalowanie}~ms) stanowi już około 20\,\% czasu. W3 liczy wektorowo również skalowanie, które trwa w niej \wynik{e1/W3/4k/sobel3/skalowanie}~ms. W W4 splot i skalowanie dzielą się pomiędzy wątki, ale przydział i zerowanie buforów nie, więc rośnie udział etapu „pozostałe”: dla 4K \wynik{e1/W4/4k/sobel3/udzial-pozostale}\,\%, a dla 8K już \wynik{e1/W4/8k/sobel3/udzial-pozostale}\,\%. W W5 czas przesłania obrazu na kartę (\wynik{e1/W5/4k/sobel3/przesyl-do}~ms) i wyniku z powrotem (\wynik{e1/W5/4k/sobel3/przesyl-z}~ms) jest kilkukrotnie krótszy od obliczeń na karcie (\wynik{e1/W5/4k/sobel3/kernel}~ms).
 
 \subsection{Wersja W2 i W3 -- rozmiar maski}
 
@@ -500,7 +518,7 @@ Przyspieszenie i efektywność W4 w funkcji liczby wątków pokazano na rysunku~
 \begin{figure}[!htbp]
 	\centering
 	\rys{e3_skalowanie}
-	\caption{Przyspieszenie $S(N)$ i efektywność $E(N)$ wersji W4 względem tej samej wersji na 1 wątku (obrazy HD, 4K, 8K; harmonogram dynamic, fragment 16 wierszy). Linie kropkowane: prawo Amdahla dla dopasowanego $s$. Pionowe linie: 6 wątków (1 blok rdzeni), 12 (rdzenie fizyczne), 24 (wątki SMT).}
+	\caption{Przyspieszenie $S(N) = T(1)/T(N)$ (górny panel) i efektywność $E(N) = S(N)/N$ (dolny panel) wersji W4 względem tej samej wersji na 1 wątku (obrazy HD, 4K, 8K; harmonogram dynamic, fragment 16 wierszy). Linie kropkowane: prawo Amdahla dla dopasowanego $s$. Pionowe linie: 6 wątków (1 blok rdzeni), 12 (rdzenie fizyczne), 24 (wątki SMT).}
 	\label{fig:e3}
 \end{figure}
 
@@ -527,7 +545,7 @@ Rysunek~\ref{fig:e4} przedstawia czas W4 dla czterech strategii przydziału i ro
 	\label{fig:e4}
 \end{figure}
 
-Dla 24 wątków najkrótszy czas, \wynik{e4/t24/najlepszy-czas}~ms, dała konfiguracja \wynik{e4/t24/najlepszy} (harmonogram, rozmiar fragmentu), a najdłuższy, \wynik{e4/t24/najgorszy-czas}~ms, konfiguracja \wynik{e4/t24/najgorszy}. Obraz 4K ma 2160 wierszy, więc fragmenty po 256 wierszy dają tylko 9 porcji pracy dla 24 wątków: 15 wątków nie ma nic do zrobienia, a nierównowaga (różnica czasu zakończenia pracy przez wątki) wyniosła \wynik{e4/t24/dynamic/c256/nierownowaga}~ms. Przy fragmencie 1 wiersza nierównowaga spadła do \wynik{e4/t24/dynamic/c1/nierownowaga}~ms. Koszt operacji atomowej na licznik fragmentów okazał się pomijalny. Jeden wiersz obrazu 4K jądro W1 liczy przez kilkadziesiąt mikrosekund, a operacja atomowa trwa kilkadziesiąt nanosekund, czyli około tysiąc razy krócej. Harmonogram \emph{static} (jeden blok na wątek) był wolniejszy (\wynik{e4/t24/static/c0}~ms) z nierównowagą \wynik{e4/t24/static/c0/nierownowaga}~ms, ponieważ nie kompensuje wątków spowolnionych przez system lub przez współdzielenie rdzenia w SMT. Dla 12 wątków najlepsza była konfiguracja \wynik{e4/t12/najlepszy} (\wynik{e4/t12/najlepszy-czas}~ms), ale różnice między \emph{dynamic} i \emph{guided} przy fragmentach do 32 wierszy mieściły się w rozrzucie pomiaru.
+Dla 24 wątków najkrótszy czas, \wynik{e4/t24/najlepszy-czas}~ms, dał harmonogram \wynik{e4/t24/najlepszy}, a najdłuższy, \wynik{e4/t24/najgorszy-czas}~ms, harmonogram \wynik{e4/t24/najgorszy}. Obraz 4K ma 2160 wierszy, więc fragmenty po 256 wierszy dają tylko 9 porcji pracy dla 24 wątków: 15 wątków nie ma nic do zrobienia, a nierównowaga (różnica czasu zakończenia pracy przez wątki) wyniosła \wynik{e4/t24/dynamic/c256/nierownowaga}~ms. Przy fragmencie 1 wiersza nierównowaga spadła do \wynik{e4/t24/dynamic/c1/nierownowaga}~ms. Koszt operacji atomowej na licznik fragmentów okazał się pomijalny. Jeden wiersz obrazu 4K jądro W1 liczy przez kilkadziesiąt mikrosekund, a operacja atomowa trwa kilkadziesiąt nanosekund, czyli około tysiąc razy krócej. Harmonogram \emph{static} (jeden blok na wątek) był wolniejszy (\wynik{e4/t24/static/c0}~ms) z nierównowagą \wynik{e4/t24/static/c0/nierownowaga}~ms, ponieważ nie kompensuje wątków spowolnionych przez system lub przez współdzielenie rdzenia w SMT. Dla 12 wątków najlepszy był harmonogram \wynik{e4/t12/najlepszy} (\wynik{e4/t12/najlepszy-czas}~ms), ale różnice między \emph{dynamic} i \emph{guided} przy fragmentach do 32 wierszy mieściły się w rozrzucie pomiaru.
 
 \subsubsection{Synchronizacja przy wyznaczaniu maksimum}
 
@@ -536,7 +554,7 @@ Rysunek~\ref{fig:e8b} porównuje pięć sposobów wyznaczania maksimum globalneg
 \begin{figure}[!htbp]
 	\centering
 	\rys{e8b_redukcja}
-	\caption{Czas W4 dla pięciu sposobów wyznaczania maksimum globalnego: dla 24 wątków (lewy panel) i w funkcji liczby wątków (prawy panel, te same kolory). Obraz 4K, skala logarytmiczna.}
+	\caption{Czas W4 dla pięciu sposobów wyznaczania maksimum globalnego: dla 24 wątków (górny panel) i w funkcji liczby wątków (dolny panel). Obraz 4K, skala logarytmiczna.}
 	\label{fig:e8b}
 \end{figure}
 
@@ -565,7 +583,7 @@ Rysunek~\ref{fig:e6} porównuje pulę wątków z tworzeniem nowych wątków w ka
 \begin{figure}[!htbp]
 	\centering
 	\rys{e6_mechanizmy}
-	\caption{Czas W4 z pulą wątków i z nowymi wątkami tworzonymi w każdym etapie (harmonogramy static i dynamic, obrazy HD i 4K).}
+	\caption{Czas W4 z pulą wątków i z nowymi wątkami tworzonymi w każdym etapie (harmonogramy static i dynamic; obraz HD w górnym, 4K w dolnym panelu; skala logarytmiczna).}
 	\label{fig:e6}
 \end{figure}
 
@@ -591,7 +609,7 @@ Rysunek~\ref{fig:e9} porównuje przyspieszenie samego algorytmu i całego progra
 \begin{figure}[!htbp]
 	\centering
 	\rys{e9_amdahl}
-	\caption{Przyspieszenie samego algorytmu i całego programu (wczytanie JPG, algorytm W4, zapis JPG) w funkcji liczby wątków; linia kropkowana: prawo Amdahla dla zmierzonego udziału wczytania i zapisu.}
+	\caption{Przyspieszenie samego algorytmu i całego programu (wczytanie JPG, algorytm W4, zapis JPG) w funkcji liczby wątków (obraz 4K w górnym, 8K w dolnym panelu); linia kropkowana: prawo Amdahla dla zmierzonego udziału wczytania i zapisu $s$.}
 	\label{fig:e9}
 \end{figure}
 
@@ -604,7 +622,7 @@ Etapy W5 dla obrazu 4K pokazano na rysunku~\ref{fig:e5}, zależność od rozmiar
 \begin{figure}[!htbp]
 	\centering
 	\rys{e5_gpu_etapy}
-	\caption{Czas W5 z podziałem na przesył obrazu na kartę, obliczenia i przesył wyniku, wobec W4 (obraz 4K, maski $3\times3$ i $7\times7$); auto -- obliczenia dokładne, fp32 -- pojedyncza precyzja.}
+	\caption{Czas W5 z podziałem na przesył obrazu na kartę, obliczenia i przesył wyniku, wobec W4 (obraz 4K; maska $3\times3$ w górnym, $7\times7$ w dolnym panelu); auto -- obliczenia dokładne, fp32 -- pojedyncza precyzja.}
 	\label{fig:e5}
 \end{figure}
 
@@ -618,7 +636,7 @@ Etapy W5 dla obrazu 4K pokazano na rysunku~\ref{fig:e5}, zależność od rozmiar
 \begin{figure}[!htbp]
 	\centering
 	\rys{e5b_gpu_watki}
-	\caption{Czas obliczeń na karcie w funkcji liczby uruchomionych wątków GPU (liczba pikseli na wątek od 1 do 64) dla czterech rozmiarów grupy roboczej (obrazy HD i 4K, Sobel $3\times3$).}
+	\caption{Czas obliczeń na karcie w funkcji liczby uruchomionych wątków GPU (liczba pikseli na wątek od 1 do 64) dla czterech rozmiarów grupy roboczej; obraz HD w górnym, 4K w dolnym panelu, Sobel $3\times3$.}
 	\label{fig:e5b}
 \end{figure}
 
@@ -650,7 +668,7 @@ Zależność czasu, przyspieszenia i przepustowości od rozmiaru obrazu przedsta
 \begin{figure}[!htbp]
 	\centering
 	\rys{e13_przepustowosc}
-	\caption{Przepustowość [Mpix/s] w funkcji rozmiaru obrazu; pionowe linie: rozmiar, przy którym dane (6~B/piksel) przekraczają pamięć L2 rdzenia, L3 jednego bloku rdzeni i L3 obu bloków.}
+	\caption{Przepustowość [Mpix/s] w funkcji rozmiaru obrazu; pionowe linie: rozmiar, przy którym dane (6~B/piksel) przekraczają pamięć L2 rdzenia, L3 jednego bloku rdzeni (CCD) i L3 obu bloków.}
 	\label{fig:e13prz}
 \end{figure}
 
@@ -674,7 +692,7 @@ Wszystkie wersje były szybsze od W1 już dla najmniejszego obrazu ($256\times14
 
 Najwyraźniejszy wpływ pamięci podręcznej widać w W3 (rysunek~\ref{fig:e13prz}). Między obrazem $3840\times2160$ (8,3~Mpix, \wynik{e13/W3/sobel3/3840x2160/czas}~ms) a $5120\times2880$ (14,7~Mpix, \wynik{e13/W3/sobel3/5120x2880/czas}~ms) liczba pikseli wzrosła 1,8 raza, a czas -- ponad 4 razy. Przy 6~B/piksel dane obrazu 4K (około 50~MB) częściowo mieszczą się w pamięci L3, a obrazu 5K (około 88~MB) już nie, i jednowątkowe jądro wektorowe zaczyna czekać na pamięć operacyjną. Przyspieszenie W3 spadło z \wynik{e13/W3/sobel3/1280x720/przysp}$\times$ dla $1280\times720$ do \wynik{e13/W3/sobel3/10240x5760/przysp}$\times$ dla 59~Mpix.
 
-Proporcje obrazu przy tej samej liczbie pikseli nie miały znaczenia dla W1 (\wynik{e13/proporcje/W1/2048x2048}~ms dla każdego kształtu). W W4 obraz $16384\times256$ był wyraźnie wolniejszy (\wynik{e13/proporcje/W4/16384x256}~ms wobec \wynik{e13/proporcje/W4/2048x2048}~ms dla $2048\times2048$), ponieważ 256 wierszy w fragmentach po 16 daje tylko 16 porcji pracy dla 24 wątków. Treść obrazu (zdjęcie lub obraz syntetyczny) nie wpływała na czas W1 i W4; największa różnica, \wynik{e13b/maks-roznica-proc}\,\%, wystąpiła dla W3 i obrazu 4K, której czas dla tego rozmiaru miał też największy rozrzut, więc nie przypisano jej treści obrazu.
+Proporcje obrazu przy tej samej liczbie pikseli nie miały znaczenia dla W1 (\wynik{e13/proporcje/W1/2048x2048}~ms dla każdego kształtu). W W4 obraz $16384\times256$ był wyraźnie wolniejszy (\wynik{e13/proporcje/W4/16384x256}~ms wobec \wynik{e13/proporcje/W4/2048x2048}~ms dla $2048\times2048$), ponieważ 256 wierszy w fragmentach po 16 daje tylko 16 porcji pracy dla 24 wątków. Treść obrazu (zdjęcie lub obraz syntetyczny) nie wpływała na czas W1 i W4. Największą różnicę, \wynik{e13b/maks-roznica-proc}\,\%, zmierzono dla W3 i obrazu 4K. Czas W3 dla tego rozmiaru miał jednak największy rozrzut w całym eksperymencie, dlatego tej różnicy nie przypisano treści obrazu.
 
 \subsection{Jakość wykrywania krawędzi a rozmiar maski}
 \label{sec:jakosc}
@@ -744,8 +762,11 @@ Ograniczenia: wyniki dotyczą jednego komputera z dwoma blokami rdzeni i jednej 
 
 \FloatBarrier
 \begin{thebibliography}{99}
+	\bibitem{wojcik}
+	Wójcik R., \emph{Zarządzanie w systemach i sieciach komputerowych}, materiały do wykładu, Wykład~2: Zasoby i procesy w systemach i sieciach komputerowych, Politechnika Wrocławska, Wrocław, 2026.
+
 	\bibitem{gonzalez}
-	Gonzalez R.~C., Woods R.~E., \emph{Digital Image Processing}, 4th ed., Pearson, 2018.
+	Gonzalez R.~C., Woods R.~E., \emph{Digital Image Processing}, 4th ed., Pearson, New York, 2018.
 
 	\bibitem{tadeusiewicz}
 	Tadeusiewicz R., Korohoda P., \emph{Komputerowa analiza i przetwarzanie obrazów}, Wydawnictwo Fundacji Postępu Telekomunikacji, Kraków, 1997.
@@ -753,8 +774,17 @@ Ograniczenia: wyniki dotyczą jednego komputera z dwoma blokami rdzeni i jednej 
 	\bibitem{czech}
 	Czech Z., \emph{Wprowadzenie do obliczeń równoległych}, PWN, Warszawa, 2010.
 
+	\bibitem{blazewicz}
+	Błażewicz J., \emph{Problemy optymalizacji kombinatorycznej}, PWN, Warszawa, 1996.
+
+	\bibitem{karbowski}
+	Karbowski A., Niewiadomska-Szynkiewicz E. (red.), \emph{Programowanie równoległe i rozproszone}, Oficyna Wydawnicza Politechniki Warszawskiej, Warszawa, 2009.
+
+	\bibitem{silberschatz}
+	Silberschatz A., Peterson J.~L., Gagne G., \emph{Podstawy systemów operacyjnych}, WNT, Warszawa, 2005.
+
 	\bibitem{williams}
-	Williams A., \emph{C++ Concurrency in Action}, 2nd ed., Manning, 2019.
+	Williams A., \emph{C++ Concurrency in Action}, 2nd ed., Manning, Shelter Island, 2019.
 
 	\bibitem{openmp}
 	OpenMP Architecture Review Board, \emph{OpenMP Application Programming Interface}, Version 5.2, 2021.

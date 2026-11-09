@@ -10,5 +10,3 @@ __pycache__/
 # jest już w sprawko/zrzuty/.  Surowe CSV i meta.json zostają w repozytorium.
 wyniki/*/images/
 wyniki/*/_io_tmp.jpg
-wyniki_archiwum_v0v8/*/images/
-wyniki_archiwum_v0v8/*/_io_tmp.jpg
