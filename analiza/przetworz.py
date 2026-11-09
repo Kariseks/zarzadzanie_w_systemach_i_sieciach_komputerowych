@@ -39,6 +39,8 @@ from matplotlib import font_manager, ticker  # noqa: E402
 import wspolne as w  # noqa: E402
 
 CM = 1 / 2.54
+# Rysunki, których kopie PNG trafiają do docs/img/ (README.md na GitHubie nie wyświetla PDF-ów)
+RYS_README = {"e1_wersje_maski", "e1b_calosc_sobel3", "e3_skalowanie", "e5_gpu_etapy", "e14_jakosc", "e14_przyklad"}
 SZER = 16.0 * CM          # \textwidth przy marginesach 2,5 cm
 SZER_POL = 7.8 * CM
 WYS = 6.2 * CM
@@ -273,11 +275,15 @@ class Wyjscie:
     rysunki: list[str] = field(default_factory=list)
     pliki_tabel: list[str] = field(default_factory=list)
     uwagi: list[str] = field(default_factory=list)
+    png_readme: Path | None = None      # docs/img/ – kopie PNG wybranych rysunków do README.md
 
     def zapisz_rys(self, fig, nazwa: str, zrodlo: str) -> None:
         self.zrzuty.mkdir(parents=True, exist_ok=True)
         p = self.zrzuty / f"{nazwa}.pdf"
         fig.savefig(p)
+        if self.png_readme is not None and nazwa in RYS_README:
+            self.png_readme.mkdir(parents=True, exist_ok=True)
+            fig.savefig(self.png_readme / f"{nazwa}.png", dpi=170, facecolor="white")
         plt.close(fig)
         self.rysunki.append(p.name)
         w.info(f"  rysunek {p.name}  ({zrodlo})")
@@ -1268,6 +1274,8 @@ def main(argv: list[str] | None = None) -> int:
         SZER, SZER_POL, WYS = 13.0 * CM, 6.4 * CM, 6.0 * CM
         zrzuty = zrzuty / "slajdy"
     out = Wyjscie(zrzuty, tabele)
+    if domyslne and not args.slajdy:
+        out.png_readme = w.REPO / "docs" / "img"
     eksp: dict[str, Eksperyment] = {}
     w.info(f"=== przetwarzanie: {args.wyniki} -> {zrzuty} ===")
     for nazwa, fn in PROCESORY:
