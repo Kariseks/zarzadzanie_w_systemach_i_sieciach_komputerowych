@@ -1,0 +1,37 @@
+{
+  "name": "E8_normalizacja",
+  "description": "Skalowanie wyniku: globalne maksimum (2 przebiegi + bariera) / stała skala / obcięcie (1 przebieg). T z jądrami V6 (bufor modułu) i V8 (przeliczanie). Obrazy 4K i 8K.",
+  "variants": [
+    "T"
+  ],
+  "kernels": [
+    "V6",
+    "V8"
+  ],
+  "scalings": "all",
+  "images": [
+    "obrazy/skalowane/3840x2160.png",
+    "obrazy/skalowane/7680x4320.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "threads": [
+    1,
+    2,
+    4,
+    8,
+    12,
+    16,
+    24
+  ],
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 108
+}

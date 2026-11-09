@@ -1,0 +1,33 @@
+{
+  "name": "E10_topologia",
+  "description": "Topologia procesora: przypinanie wątków (none / compact – najpierw jeden CCD / spread – naprzemiennie CCD / nosmt) dla 6, 12, 18 i 24 wątków; T/V6 i T/V8. Obraz 8K.",
+  "variants": [
+    "T"
+  ],
+  "kernels": [
+    "V6",
+    "V8"
+  ],
+  "affinities": "all",
+  "images": [
+    "obrazy/skalowane/7680x4320.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "threads": [
+    6,
+    12,
+    18,
+    24
+  ],
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 111
+}

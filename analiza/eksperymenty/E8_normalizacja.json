@@ -1,0 +1,32 @@
+{
+  "name": "E8_normalizacja",
+  "description": "W4: skalowanie wyniku – globalne maksimum (2 etapy + bariera) / stała skala / obcięcie (1 etap); obraz 4K.",
+  "variants": [
+    "W4"
+  ],
+  "scalings": "all",
+  "images": [
+    "obrazy/skalowane/3840x2160.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "threads": [
+    1,
+    2,
+    4,
+    8,
+    12,
+    16,
+    24
+  ],
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 209
+}

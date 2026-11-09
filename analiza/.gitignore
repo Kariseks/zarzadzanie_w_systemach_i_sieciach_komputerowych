@@ -1,0 +1,14 @@
+# Środowisko Pythona (odtwarzane z requirements.txt)
+.venv/
+__pycache__/
+
+# Blokada pomiarów (tworzona przez testy.py / pelny_przebieg.py)
+.testy.lock
+
+# Obrazy wynikowe zapisywane przez eksperymenty (save_images, np. E7: ok. 90 MB) –
+# odtwarzalne ponownym pomiarem; potrzebne tylko do rysunku e7_przyklad, który
+# jest już w sprawko/zrzuty/.  Surowe CSV i meta.json zostają w repozytorium.
+wyniki/*/images/
+wyniki/*/_io_tmp.jpg
+wyniki_archiwum_v0v8/*/images/
+wyniki_archiwum_v0v8/*/_io_tmp.jpg

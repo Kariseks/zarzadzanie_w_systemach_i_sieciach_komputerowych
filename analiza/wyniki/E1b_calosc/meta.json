@@ -1,0 +1,124 @@
+{
+    "cases_done": 30,
+    "cases_planned": 30,
+    "command_line": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/implementacja/build/edge_bench --experiment /home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/eksperymenty/E1b_calosc.json --out /home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/wyniki/E1b_calosc --force",
+    "complete": true,
+    "correctness_failures": 0,
+    "description": "Porównanie 5 wersji – cały program: wczytanie pliku obrazu (dekodowanie + konwersja do skali szarości), przetwarzanie, zapis wyniku JPG.",
+    "experiment": "E1b_calosc",
+    "experiment_file": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/eksperymenty/E1b_calosc.json",
+    "finished": "2026-11-09T19:41:14",
+    "git": "6a0e7c2-dirty",
+    "images": [
+        {
+            "height": 2160,
+            "sha256": "f74a922471de0858e97497568b02305a2c2334afce55f8ea155e25d863f22a5c",
+            "source": "obrazy/skalowane/3840x2160.jpg",
+            "width": 3840
+        },
+        {
+            "height": 4320,
+            "sha256": "1049232220c447004888c017b5b09166c8d68fda1e0f65d07ffbd19e0e464f65",
+            "source": "obrazy/skalowane/7680x4320.jpg",
+            "width": 7680
+        },
+        {
+            "height": 512,
+            "sha256": "ba23983c76b4832ee0e8af0592664756841a16779acd69f792e268fb6d13d6e7",
+            "source": "obrazy/kodim08.png",
+            "width": 768
+        }
+    ],
+    "interrupted": false,
+    "peak_ram_mb": 611.12890625,
+    "rows": 330,
+    "spec": {
+        "affinities": [
+            "none"
+        ],
+        "chunks": [
+            16
+        ],
+        "gpu_ppws": [
+            1
+        ],
+        "gpu_precisions": [
+            "auto"
+        ],
+        "gpu_workgroups": [
+            "16x16"
+        ],
+        "images": [
+            "obrazy/skalowane/3840x2160.jpg",
+            "obrazy/skalowane/7680x4320.jpg",
+            "obrazy/kodim08.png"
+        ],
+        "include_io": true,
+        "kernels": [
+            "V0"
+        ],
+        "masks": [
+            "sobel3",
+            "sobel7"
+        ],
+        "mechs": [
+            "pool"
+        ],
+        "name": "E1b_calosc",
+        "norms": [
+            "l2"
+        ],
+        "reduces": [
+            "local"
+        ],
+        "repeats": 11,
+        "save_images": false,
+        "scalings": [
+            "global"
+        ],
+        "schedules": [
+            "dynamic"
+        ],
+        "shuffle": 202,
+        "strict": false,
+        "threads": [
+            24
+        ],
+        "variants": [
+            "W1",
+            "W2",
+            "W3",
+            "W4",
+            "W5"
+        ],
+        "warmup": 1
+    },
+    "started": "2026-11-09T19:39:04",
+    "system": {
+        "build_type": "Release",
+        "compiler": "gcc 13.3.0",
+        "cpu_model": "AMD Ryzen 9 9900X 12-Core Processor",
+        "cxx_flags": "-Wall -Wextra -O3 -DNDEBUG",
+        "governor": "performance",
+        "hostname": "karol-pc-MS-7D75",
+        "kernel": "7.0.0-42-generic",
+        "logical_cpus": 24,
+        "opencl_compiled": true,
+        "os": "Ubuntu 24.04.5 LTS",
+        "qt_version": "6.12.0",
+        "simd": "sse4_2,avx,avx2,fma,avx512f,avx512bw",
+        "topology": "24 CPU, 12 rdzeni, 2 grupy L3"
+    },
+    "variants_run": [
+        "W1",
+        "W2",
+        "W3",
+        "W4",
+        "W5"
+    ],
+    "variants_skipped": [
+    ],
+    "warnings": [
+    ],
+    "working_dir": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych"
+}

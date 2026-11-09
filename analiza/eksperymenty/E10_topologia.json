@@ -1,0 +1,29 @@
+{
+  "name": "E10_topologia",
+  "description": "W4: przypinanie wątków do rdzeni (none / compact / spread / nosmt) dla 6, 12, 18, 24 wątków; obraz 8K.",
+  "variants": [
+    "W4"
+  ],
+  "affinities": "all",
+  "images": [
+    "obrazy/skalowane/7680x4320.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "threads": [
+    6,
+    12,
+    18,
+    24
+  ],
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 212
+}

@@ -1,0 +1,13 @@
+% Wygenerowane przez analiza/przetworz.py – nie edytować ręcznie
+\begin{tabular}{llrrr}
+\toprule
+Wersja & Rozmiar & Zdjęcie [ms] & Syntetyczny [ms] & Różnica [\%] \\
+\midrule
+W1 sekwencyjna & 1920$\times$1080 & 19,0 & 19,0 & -0,0 \\
+W1 sekwencyjna & 3840$\times$2160 & 76,2 & 76,5 & -0,3 \\
+W3 SIMD (AVX2) & 1920$\times$1080 & 1,68 & 1,65 & 1,8 \\
+W3 SIMD (AVX2) & 3840$\times$2160 & 8,61 & 7,40 & 16,4 \\
+W4 wątki CPU & 1920$\times$1080 & 2,05 & 1,93 & 6,2 \\
+W4 wątki CPU & 3840$\times$2160 & 8,38 & 8,47 & -1,0 \\
+\bottomrule
+\end{tabular}

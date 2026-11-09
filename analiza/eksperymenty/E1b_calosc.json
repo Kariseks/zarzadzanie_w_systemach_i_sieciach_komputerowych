@@ -1,0 +1,31 @@
+{
+  "name": "E1b_calosc",
+  "description": "Porównanie 5 wersji – cały program: wczytanie pliku obrazu (dekodowanie + konwersja do skali szarości), przetwarzanie, zapis wyniku JPG.",
+  "variants": [
+    "W1",
+    "W2",
+    "W3",
+    "W4",
+    "W5"
+  ],
+  "images": [
+    "obrazy/skalowane/3840x2160.jpg",
+    "obrazy/skalowane/7680x4320.jpg",
+    "obrazy/kodim08.png"
+  ],
+  "masks": [
+    "sobel3",
+    "sobel7"
+  ],
+  "threads": "max",
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "include_io": true,
+  "warmup": 1,
+  "repeats": 11,
+  "shuffle": 202
+}

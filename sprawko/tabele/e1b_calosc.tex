@@ -1,0 +1,12 @@
+% Wygenerowane przez analiza/przetworz.py – nie edytować ręcznie
+\begin{tabular}{lrrrrrr}
+\toprule
+Wersja & Wczyt. [ms] & Algor. [ms] & Zapis [ms] & Razem [ms] & $S$ algor. & $S$ całości \\
+\midrule
+W1 sekwencyjna & 37,5 & 76,9 & 134 & 250 & 1,00 & 1,00 \\
+W2 algorytm i pamięć & 39,4 & 15,8 & 135 & 190 & 4,87 & 1,31 \\
+W3 SIMD (AVX2) & 38,4 & 7,82 & 135 & 181 & 9,82 & 1,38 \\
+W4 wątki CPU & 39,6 & 8,28 & 137 & 184 & 9,29 & 1,36 \\
+W5 GPU & 39,1 & 6,64 & 135 & 180 & 11,6 & 1,38 \\
+\bottomrule
+\end{tabular}

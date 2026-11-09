@@ -1,0 +1,154 @@
+{
+    "cases_done": 128,
+    "cases_planned": 128,
+    "command_line": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/implementacja/build/edge_bench --experiment /home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/eksperymenty/E5_gpu.json --out /home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/wyniki/E5_gpu --force",
+    "complete": true,
+    "correctness_failures": 0,
+    "description": "GPU (OpenCL, GTX 1050 Ti): kernel naiwny / maska wkompilowana / kafel w pamięci lokalnej, precyzja auto i fp32, wobec najlepszego CPU (V8 1 wątek i T/V8 24 wątki). Obrazy 0,23–59 Mpix, Sobel 3x3 i 7x7.",
+    "experiment": "E5_gpu",
+    "experiment_file": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/eksperymenty/E5_gpu.json",
+    "finished": "2026-11-09T01:18:36",
+    "git": "6a0e7c2-dirty",
+    "images": [
+        {
+            "height": 360,
+            "sha256": "0ad314031d7e8b63e92738fe8c7c670d0dfe6e945b7497a694064251a07a95b7",
+            "source": "obrazy/skalowane/640x360.png",
+            "width": 640
+        },
+        {
+            "height": 720,
+            "sha256": "49e1fd5d8920af03d9ad6296c9ada366767816394a82e8b8e6cd7cd9de89bb29",
+            "source": "obrazy/skalowane/1280x720.png",
+            "width": 1280
+        },
+        {
+            "height": 1080,
+            "sha256": "32207c5ef0f8436912fe0cf478f9dac653a343b4fb985dcdfe0b4594b4edcedd",
+            "source": "obrazy/skalowane/1920x1080.png",
+            "width": 1920
+        },
+        {
+            "height": 1536,
+            "sha256": "1c484f5890b928d8609214980948732cfb7386cbad2d78c1fd66beacbd7c3b37",
+            "source": "obrazy/skalowane/2731x1536.png",
+            "width": 2731
+        },
+        {
+            "height": 2160,
+            "sha256": "9e40a5024b80b522af158c6133bf81dc8d9719d0e657e30bdba6f3f8b091912c",
+            "source": "obrazy/skalowane/3840x2160.png",
+            "width": 3840
+        },
+        {
+            "height": 3600,
+            "sha256": "57bf05a31eb151fceb6e09f94261e1e7f991806b2c8b053d34dae24d8c2814e8",
+            "source": "obrazy/skalowane/6400x3600.png",
+            "width": 6400
+        },
+        {
+            "height": 4320,
+            "sha256": "d4a9b951cfbed7c49f7b97a6ebb941ecde125732aec20a92f621f433d222cc3c",
+            "source": "obrazy/skalowane/7680x4320.png",
+            "width": 7680
+        },
+        {
+            "height": 5760,
+            "sha256": "130915ab15637f493b9308e4d0ae24d094659d36f951d0d77eddc457ce31bc28",
+            "source": "obrazy/skalowane/10240x5760.png",
+            "width": 10240
+        }
+    ],
+    "interrupted": false,
+    "peak_ram_mb": 566.1796875,
+    "rows": 1920,
+    "spec": {
+        "affinities": [
+            "none"
+        ],
+        "chunks": [
+            16
+        ],
+        "gpu_precisions": [
+            "auto",
+            "fp32"
+        ],
+        "images": [
+            "obrazy/skalowane/640x360.png",
+            "obrazy/skalowane/1280x720.png",
+            "obrazy/skalowane/1920x1080.png",
+            "obrazy/skalowane/2731x1536.png",
+            "obrazy/skalowane/3840x2160.png",
+            "obrazy/skalowane/6400x3600.png",
+            "obrazy/skalowane/7680x4320.png",
+            "obrazy/skalowane/10240x5760.png"
+        ],
+        "include_io": false,
+        "kernels": [
+            "V8"
+        ],
+        "masks": [
+            "sobel3",
+            "sobel7"
+        ],
+        "mechs": [
+            "pool"
+        ],
+        "name": "E5_gpu",
+        "norms": [
+            "l2"
+        ],
+        "reduces": [
+            "local"
+        ],
+        "repeats": 15,
+        "save_images": false,
+        "scalings": [
+            "global"
+        ],
+        "schedules": [
+            "dynamic"
+        ],
+        "shuffle": 105,
+        "strict": false,
+        "threads": [
+            24
+        ],
+        "variants": [
+            "GPU",
+            "GPUC",
+            "GPUL",
+            "V8",
+            "T"
+        ],
+        "warmup": 2
+    },
+    "started": "2026-11-09T01:18:04",
+    "system": {
+        "build_type": "Release",
+        "compiler": "gcc 13.3.0",
+        "cpu_model": "AMD Ryzen 9 9900X 12-Core Processor",
+        "cxx_flags": "-Wall -Wextra -O3 -DNDEBUG",
+        "governor": "performance",
+        "hostname": "karol-pc-MS-7D75",
+        "kernel": "7.0.0-42-generic",
+        "logical_cpus": 24,
+        "opencl_compiled": true,
+        "os": "Ubuntu 24.04.5 LTS",
+        "qt_version": "6.12.0",
+        "simd": "sse4_2,avx,avx2,fma,avx512f,avx512bw",
+        "topology": "24 CPU, 12 rdzeni, 2 grupy L3"
+    },
+    "variants_run": [
+        "GPU",
+        "GPUC",
+        "GPUL",
+        "V8",
+        "T"
+    ],
+    "variants_skipped": [
+    ],
+    "warnings": [
+    ],
+    "working_dir": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych"
+}

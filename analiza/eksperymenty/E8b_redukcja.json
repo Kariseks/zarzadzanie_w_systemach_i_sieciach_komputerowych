@@ -1,0 +1,31 @@
+{
+  "name": "E8b_redukcja",
+  "description": "W4: sposób wyznaczania globalnego maksimum – lokalne + redukcja / atomic CAS / mutex / zapis na piksel z wyrównaniem i bez (false sharing); obraz 4K.",
+  "variants": [
+    "W4"
+  ],
+  "reduces": "all",
+  "images": [
+    "obrazy/skalowane/3840x2160.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "threads": [
+    1,
+    2,
+    4,
+    8,
+    12,
+    24
+  ],
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 210
+}

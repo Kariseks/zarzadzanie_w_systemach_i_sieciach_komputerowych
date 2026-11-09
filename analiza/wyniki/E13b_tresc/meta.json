@@ -1,0 +1,124 @@
+{
+    "cases_done": 12,
+    "cases_planned": 12,
+    "command_line": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/implementacja/build/edge_bench --experiment /home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/eksperymenty/E13b_tresc.json --out /home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/wyniki/E13b_tresc --force",
+    "complete": true,
+    "correctness_failures": 0,
+    "description": "Kontrola: zdjęcie i obraz syntetyczny tego samego rozmiaru – czas nie powinien zależeć od treści obrazu.",
+    "experiment": "E13b_tresc",
+    "experiment_file": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/eksperymenty/E13b_tresc.json",
+    "finished": "2026-11-09T19:51:58",
+    "git": "6a0e7c2-dirty",
+    "images": [
+        {
+            "height": 1080,
+            "source": "synthetic:1920x1080:1",
+            "width": 1920
+        },
+        {
+            "height": 2160,
+            "source": "synthetic:3840x2160:1",
+            "width": 3840
+        },
+        {
+            "height": 1080,
+            "sha256": "32207c5ef0f8436912fe0cf478f9dac653a343b4fb985dcdfe0b4594b4edcedd",
+            "source": "obrazy/skalowane/1920x1080.png",
+            "width": 1920
+        },
+        {
+            "height": 2160,
+            "sha256": "9e40a5024b80b522af158c6133bf81dc8d9719d0e657e30bdba6f3f8b091912c",
+            "source": "obrazy/skalowane/3840x2160.png",
+            "width": 3840
+        }
+    ],
+    "interrupted": false,
+    "peak_ram_mb": 81.00390625,
+    "rows": 180,
+    "spec": {
+        "affinities": [
+            "none"
+        ],
+        "chunks": [
+            16
+        ],
+        "gpu_ppws": [
+            1
+        ],
+        "gpu_precisions": [
+            "auto"
+        ],
+        "gpu_workgroups": [
+            "16x16"
+        ],
+        "images": [
+            "synthetic:1920x1080:1",
+            "synthetic:3840x2160:1",
+            "obrazy/skalowane/1920x1080.png",
+            "obrazy/skalowane/3840x2160.png"
+        ],
+        "include_io": false,
+        "kernels": [
+            "V0"
+        ],
+        "masks": [
+            "sobel3"
+        ],
+        "mechs": [
+            "pool"
+        ],
+        "name": "E13b_tresc",
+        "norms": [
+            "l2"
+        ],
+        "reduces": [
+            "local"
+        ],
+        "repeats": 15,
+        "save_images": false,
+        "scalings": [
+            "global"
+        ],
+        "schedules": [
+            "dynamic"
+        ],
+        "shuffle": 214,
+        "strict": false,
+        "threads": [
+            24
+        ],
+        "variants": [
+            "W1",
+            "W3",
+            "W4"
+        ],
+        "warmup": 2
+    },
+    "started": "2026-11-09T19:51:53",
+    "system": {
+        "build_type": "Release",
+        "compiler": "gcc 13.3.0",
+        "cpu_model": "AMD Ryzen 9 9900X 12-Core Processor",
+        "cxx_flags": "-Wall -Wextra -O3 -DNDEBUG",
+        "governor": "performance",
+        "hostname": "karol-pc-MS-7D75",
+        "kernel": "7.0.0-42-generic",
+        "logical_cpus": 24,
+        "opencl_compiled": true,
+        "os": "Ubuntu 24.04.5 LTS",
+        "qt_version": "6.12.0",
+        "simd": "sse4_2,avx,avx2,fma,avx512f,avx512bw",
+        "topology": "24 CPU, 12 rdzeni, 2 grupy L3"
+    },
+    "variants_run": [
+        "W1",
+        "W3",
+        "W4"
+    ],
+    "variants_skipped": [
+    ],
+    "warnings": [
+    ],
+    "working_dir": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych"
+}

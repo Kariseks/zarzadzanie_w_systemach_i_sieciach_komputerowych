@@ -1,0 +1,25 @@
+{
+  "name": "E3_watki",
+  "description": "W4: liczba wątków 1–24 + nadsubskrypcja 32, 48; harmonogram dynamic, fragment 16; obrazy HD/4K/8K.",
+  "variants": [
+    "W4"
+  ],
+  "images": [
+    "obrazy/skalowane/1920x1080.png",
+    "obrazy/skalowane/3840x2160.png",
+    "obrazy/skalowane/7680x4320.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "threads": "1-24,32,48",
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 204
+}

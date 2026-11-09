@@ -1,0 +1,28 @@
+{
+  "name": "E1_warianty",
+  "description": "Warianty jednowątkowe V0–V8 i AI: wkład kolejnych optymalizacji. Sobel 3x3, obrazy HD/4K/8K oraz Kodak 08 i Lena.",
+  "variants": [
+    "V0",
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "V5",
+    "V6",
+    "V8",
+    "AI"
+  ],
+  "images": [
+    "obrazy/skalowane/1920x1080.png",
+    "obrazy/skalowane/3840x2160.png",
+    "obrazy/skalowane/7680x4320.png",
+    "obrazy/kodim08.png",
+    "obrazy/lena_gray.gif"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 101
+}

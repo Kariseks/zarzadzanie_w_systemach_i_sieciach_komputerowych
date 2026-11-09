@@ -1,0 +1,43 @@
+{
+  "name": "E13_rozmiar",
+  "description": "Rozmiar danych wejściowych: 14 rozmiarów 16:9 (0,04–59 Mpix) + kontrola proporcji; W1–W5; Sobel 3x3 i 7x7.",
+  "variants": [
+    "W1",
+    "W2",
+    "W3",
+    "W4",
+    "W5"
+  ],
+  "threads": "max",
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "images": [
+    "obrazy/skalowane/256x144.png",
+    "obrazy/skalowane/426x240.png",
+    "obrazy/skalowane/640x360.png",
+    "obrazy/skalowane/960x540.png",
+    "obrazy/skalowane/1280x720.png",
+    "obrazy/skalowane/1920x1080.png",
+    "obrazy/skalowane/2560x1440.png",
+    "obrazy/skalowane/2731x1536.png",
+    "obrazy/skalowane/3200x1800.png",
+    "obrazy/skalowane/3840x2160.png",
+    "obrazy/skalowane/5120x2880.png",
+    "obrazy/skalowane/6400x3600.png",
+    "obrazy/skalowane/7680x4320.png",
+    "obrazy/skalowane/10240x5760.png",
+    "obrazy/skalowane/2048x2048.png",
+    "obrazy/skalowane/16384x256.png"
+  ],
+  "masks": [
+    "sobel3",
+    "sobel7"
+  ],
+  "warmup": 2,
+  "repeats": 15,
+  "shuffle": 213
+}

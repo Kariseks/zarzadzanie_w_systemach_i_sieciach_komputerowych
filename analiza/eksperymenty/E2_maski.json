@@ -1,0 +1,32 @@
+{
+  "name": "E2_maski",
+  "description": "Rozmiar i rodzaj maski dla każdej wersji (Sobel 3/5/7, Prewitt, Scharr, Roberts), obraz 4K.",
+  "variants": [
+    "W1",
+    "W2",
+    "W3",
+    "W4",
+    "W5"
+  ],
+  "images": [
+    "obrazy/skalowane/3840x2160.png"
+  ],
+  "masks": [
+    "sobel3",
+    "sobel5",
+    "sobel7",
+    "prewitt",
+    "scharr",
+    "roberts"
+  ],
+  "threads": "max",
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 203
+}

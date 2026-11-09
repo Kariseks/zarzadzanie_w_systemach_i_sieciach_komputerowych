@@ -7,3 +7,12 @@
 # 3. Dodaj swoje wyjątki (pliki, które MAJĄ być śledzone)
 !sprawozdanie.tex
 !sprawozdanie.pdf
+!zalozenia.tex
+!zalozenia.pdf
+!prezentacja.tex
+!prezentacja.pdf
+!zrzuty/
+!zrzuty/**
+!tabele/
+!tabele/**
+!wyniki.tex

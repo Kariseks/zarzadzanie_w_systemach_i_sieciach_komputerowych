@@ -1,0 +1,38 @@
+{
+  "name": "E6_mechanizmy",
+  "description": "W4: pula wątków vs nowe wątki tworzone w każdym etapie; harmonogramy static i dynamic; obrazy HD i 4K.",
+  "variants": [
+    "W4"
+  ],
+  "mechs": [
+    "pool",
+    "spawn"
+  ],
+  "images": [
+    "obrazy/skalowane/1920x1080.png",
+    "obrazy/skalowane/3840x2160.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "threads": [
+    1,
+    2,
+    4,
+    6,
+    8,
+    12,
+    16,
+    24
+  ],
+  "schedules": [
+    "static",
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 208
+}

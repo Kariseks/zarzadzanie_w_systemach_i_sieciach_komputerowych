@@ -1,0 +1,28 @@
+{
+  "name": "E0_dymny",
+  "description": "Test dymny łańcucha: W1–W5, małe obrazy. Nie trafia do sprawozdania.",
+  "variants": [
+    "W1",
+    "W2",
+    "W3",
+    "W4",
+    "W5"
+  ],
+  "images": [
+    "synthetic:640x480:1",
+    "obrazy/kodim08.png"
+  ],
+  "masks": [
+    "sobel3",
+    "sobel7"
+  ],
+  "threads": "max",
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "warmup": 1,
+  "repeats": 3
+}

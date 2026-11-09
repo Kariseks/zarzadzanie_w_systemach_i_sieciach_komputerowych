@@ -1,0 +1,24 @@
+{
+  "name": "E2_maski",
+  "description": "Maski i rozmiar k: Sobel 3/5/7, Prewitt, Scharr, Roberts; splot 2D (V0, V2) vs rozdzielny (V3, V6). Obraz 4K.",
+  "variants": [
+    "V0",
+    "V2",
+    "V3",
+    "V6"
+  ],
+  "images": [
+    "obrazy/skalowane/3840x2160.png"
+  ],
+  "masks": [
+    "sobel3",
+    "sobel5",
+    "sobel7",
+    "prewitt",
+    "scharr",
+    "roberts"
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 102
+}

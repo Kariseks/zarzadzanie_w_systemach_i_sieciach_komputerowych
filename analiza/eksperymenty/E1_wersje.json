@@ -1,0 +1,32 @@
+{
+  "name": "E1_wersje",
+  "description": "Porównanie 5 wersji – sam algorytm (obraz w pamięci -> obraz wynikowy). W4: 24 wątki, dynamic, fragment 16. Obrazy HD/4K/8K, Kodak 08, Lena; Sobel 3x3 i 7x7.",
+  "variants": [
+    "W1",
+    "W2",
+    "W3",
+    "W4",
+    "W5"
+  ],
+  "images": [
+    "obrazy/skalowane/1920x1080.png",
+    "obrazy/skalowane/3840x2160.png",
+    "obrazy/skalowane/7680x4320.png",
+    "obrazy/kodim08.png",
+    "obrazy/lena_gray.gif"
+  ],
+  "masks": [
+    "sobel3",
+    "sobel7"
+  ],
+  "threads": "max",
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "warmup": 2,
+  "repeats": 15,
+  "shuffle": 201
+}

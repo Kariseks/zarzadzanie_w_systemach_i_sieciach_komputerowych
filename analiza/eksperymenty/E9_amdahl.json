@@ -1,0 +1,36 @@
+{
+  "name": "E9_amdahl",
+  "description": "W4: cały program (wczytanie JPG, przetwarzanie, zapis JPG) w funkcji liczby wątków – udział części sekwencyjnej i prawo Amdahla; obrazy 4K i 8K.",
+  "variants": [
+    "W4"
+  ],
+  "images": [
+    "obrazy/skalowane/3840x2160.jpg",
+    "obrazy/skalowane/7680x4320.jpg"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "threads": [
+    1,
+    2,
+    3,
+    4,
+    6,
+    8,
+    12,
+    16,
+    20,
+    24
+  ],
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "include_io": true,
+  "warmup": 1,
+  "repeats": 11,
+  "shuffle": 211
+}

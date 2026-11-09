@@ -1,0 +1,32 @@
+{
+  "name": "E4_harmonogramy",
+  "description": "W4: harmonogram x rozmiar fragmentu (1–256 wierszy), 12 i 24 wątki, obraz 4K.",
+  "variants": [
+    "W4"
+  ],
+  "images": [
+    "obrazy/skalowane/3840x2160.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "threads": [
+    12,
+    24
+  ],
+  "schedules": "all",
+  "chunks": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 205
+}

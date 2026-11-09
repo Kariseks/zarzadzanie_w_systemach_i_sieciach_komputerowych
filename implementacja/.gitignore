@@ -1,2 +1,12 @@
+# Katalogi budowania (CMake, Qt Creator: build/<kit>-<konfiguracja>)
 build/
-.gtcreator/
+build-*/
+
+# Ustawienia lokalne Qt Creatora
+.qtcreator/
+CMakeLists.txt.user*
+
+# Obraz wejściowy kopiowany przez CMake do katalogu budowania i wyniki ręcznych prób
+input.jpg
+output.jpg
+output.png

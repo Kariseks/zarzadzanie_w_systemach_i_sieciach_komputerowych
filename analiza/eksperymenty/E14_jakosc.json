@@ -1,0 +1,26 @@
+{
+  "name": "E14_jakosc",
+  "description": "Jakość wykrywania krawędzi a rozmiar maski: obraz o znanych krawędziach z szumem gaussowskim sigma = 0–40; wszystkie maski; zapis wyników do oceny miarą Pratta (FOM).",
+  "variants": [
+    "W1"
+  ],
+  "images": [
+    "obrazy/jakosc/szum_00.png",
+    "obrazy/jakosc/szum_05.png",
+    "obrazy/jakosc/szum_10.png",
+    "obrazy/jakosc/szum_20.png",
+    "obrazy/jakosc/szum_30.png",
+    "obrazy/jakosc/szum_40.png"
+  ],
+  "masks": [
+    "sobel3",
+    "sobel5",
+    "sobel7",
+    "prewitt",
+    "scharr",
+    "roberts"
+  ],
+  "warmup": 0,
+  "repeats": 1,
+  "save_images": true
+}

@@ -1,0 +1,136 @@
+{
+    "cases_done": 234,
+    "cases_planned": 234,
+    "command_line": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/implementacja/build/edge_bench --experiment /home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/eksperymenty/E3_watki.json --out /home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/wyniki/E3_watki --force",
+    "complete": true,
+    "correctness_failures": 0,
+    "description": "Skalowanie względem liczby wątków (1–24 + nadsubskrypcja 32, 48), harmonogram dynamic, chunk 16; jądra V0, V4, V8. Obrazy HD/4K/8K.",
+    "experiment": "E3_watki",
+    "experiment_file": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/eksperymenty/E3_watki.json",
+    "finished": "2026-11-09T01:17:42",
+    "git": "6a0e7c2-dirty",
+    "images": [
+        {
+            "height": 1080,
+            "sha256": "32207c5ef0f8436912fe0cf478f9dac653a343b4fb985dcdfe0b4594b4edcedd",
+            "source": "obrazy/skalowane/1920x1080.png",
+            "width": 1920
+        },
+        {
+            "height": 2160,
+            "sha256": "9e40a5024b80b522af158c6133bf81dc8d9719d0e657e30bdba6f3f8b091912c",
+            "source": "obrazy/skalowane/3840x2160.png",
+            "width": 3840
+        },
+        {
+            "height": 4320,
+            "sha256": "d4a9b951cfbed7c49f7b97a6ebb941ecde125732aec20a92f621f433d222cc3c",
+            "source": "obrazy/skalowane/7680x4320.png",
+            "width": 7680
+        }
+    ],
+    "interrupted": false,
+    "peak_ram_mb": 403.80859375,
+    "rows": 3510,
+    "spec": {
+        "affinities": [
+            "none"
+        ],
+        "chunks": [
+            16
+        ],
+        "gpu_precisions": [
+            "auto"
+        ],
+        "images": [
+            "obrazy/skalowane/1920x1080.png",
+            "obrazy/skalowane/3840x2160.png",
+            "obrazy/skalowane/7680x4320.png"
+        ],
+        "include_io": false,
+        "kernels": [
+            "V0",
+            "V4",
+            "V8"
+        ],
+        "masks": [
+            "sobel3"
+        ],
+        "mechs": [
+            "pool"
+        ],
+        "name": "E3_watki",
+        "norms": [
+            "l2"
+        ],
+        "reduces": [
+            "local"
+        ],
+        "repeats": 15,
+        "save_images": false,
+        "scalings": [
+            "global"
+        ],
+        "schedules": [
+            "dynamic"
+        ],
+        "shuffle": 103,
+        "strict": false,
+        "threads": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            32,
+            48
+        ],
+        "variants": [
+            "T"
+        ],
+        "warmup": 1
+    },
+    "started": "2026-11-09T01:16:45",
+    "system": {
+        "build_type": "Release",
+        "compiler": "gcc 13.3.0",
+        "cpu_model": "AMD Ryzen 9 9900X 12-Core Processor",
+        "cxx_flags": "-Wall -Wextra -O3 -DNDEBUG",
+        "governor": "performance",
+        "hostname": "karol-pc-MS-7D75",
+        "kernel": "7.0.0-42-generic",
+        "logical_cpus": 24,
+        "opencl_compiled": true,
+        "os": "Ubuntu 24.04.5 LTS",
+        "qt_version": "6.12.0",
+        "simd": "sse4_2,avx,avx2,fma,avx512f,avx512bw",
+        "topology": "24 CPU, 12 rdzeni, 2 grupy L3"
+    },
+    "variants_run": [
+        "T"
+    ],
+    "variants_skipped": [
+    ],
+    "warnings": [
+    ],
+    "working_dir": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych"
+}

@@ -1,0 +1,31 @@
+{
+  "name": "E5b_gpu_watki",
+  "description": "W5: liczba wątków na GPU – rozmiar grupy roboczej (8x8, 16x16, 32x8, 32x32) x liczba pikseli na work-item (1–64); obrazy HD i 4K, Sobel 3x3.",
+  "variants": [
+    "W5"
+  ],
+  "gpu_workgroups": [
+    "8x8",
+    "16x16",
+    "32x8",
+    "32x32"
+  ],
+  "gpu_ppws": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    64
+  ],
+  "images": [
+    "obrazy/skalowane/1920x1080.png",
+    "obrazy/skalowane/3840x2160.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "warmup": 2,
+  "repeats": 15,
+  "shuffle": 207
+}

@@ -1,0 +1,39 @@
+{
+  "name": "E13b_syntetyczne",
+  "description": "Kontrola: te same rozmiary co część E13, ale obrazy syntetyczne – czas nie powinien zależeć od treści obrazu.",
+  "variants": [
+    "V0",
+    "V6",
+    "T"
+  ],
+  "kernels": [
+    "V8"
+  ],
+  "threads": [
+    24
+  ],
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "images": [
+    "synthetic:640x360:1",
+    "synthetic:1920x1080:1",
+    "synthetic:2731x1536:1",
+    "synthetic:3840x2160:1",
+    "synthetic:7680x4320:1",
+    "obrazy/skalowane/640x360.png",
+    "obrazy/skalowane/1920x1080.png",
+    "obrazy/skalowane/2731x1536.png",
+    "obrazy/skalowane/3840x2160.png",
+    "obrazy/skalowane/7680x4320.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "warmup": 2,
+  "repeats": 21,
+  "shuffle": 114
+}

@@ -1,0 +1,44 @@
+{
+  "name": "E5_gpu",
+  "description": "GPU (OpenCL, GTX 1050 Ti): kernel naiwny / maska wkompilowana / kafel w pamięci lokalnej, precyzja auto i fp32, wobec najlepszego CPU (V8 1 wątek i T/V8 24 wątki). Obrazy 0,23–59 Mpix, Sobel 3x3 i 7x7.",
+  "variants": [
+    "GPU",
+    "GPUC",
+    "GPUL",
+    "V8",
+    "T"
+  ],
+  "kernels": [
+    "V8"
+  ],
+  "threads": [
+    24
+  ],
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "gpu_precisions": [
+    "auto",
+    "fp32"
+  ],
+  "images": [
+    "obrazy/skalowane/640x360.png",
+    "obrazy/skalowane/1280x720.png",
+    "obrazy/skalowane/1920x1080.png",
+    "obrazy/skalowane/2731x1536.png",
+    "obrazy/skalowane/3840x2160.png",
+    "obrazy/skalowane/6400x3600.png",
+    "obrazy/skalowane/7680x4320.png",
+    "obrazy/skalowane/10240x5760.png"
+  ],
+  "masks": [
+    "sobel3",
+    "sobel7"
+  ],
+  "warmup": 2,
+  "repeats": 15,
+  "shuffle": 105
+}

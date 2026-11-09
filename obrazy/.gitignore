@@ -1,0 +1,6 @@
+# Duży plik NASA – do pobrania poleceniem z ZRODLA.md
+nasa_blue_marble_*.jpg
+# Wersje przeskalowane – odtwarzane przez analiza/przygotuj_obrazy.py
+skalowane/
+# Obrazy do oceny jakości (E14) – odtwarzane przez analiza/przygotuj_obrazy.py
+jakosc/

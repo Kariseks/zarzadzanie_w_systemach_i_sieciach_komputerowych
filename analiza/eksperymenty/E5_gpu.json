@@ -1,0 +1,38 @@
+{
+  "name": "E5_gpu",
+  "description": "W5 (GPU) w funkcji rozmiaru obrazu, z podziałem na przesył i obliczenia, wobec W1 i W4; precyzja auto (dokładna) i fp32; Sobel 3x3 i 7x7.",
+  "variants": [
+    "W1",
+    "W4",
+    "W5"
+  ],
+  "threads": "max",
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "gpu_precisions": [
+    "auto",
+    "fp32"
+  ],
+  "images": [
+    "obrazy/skalowane/256x144.png",
+    "obrazy/skalowane/640x360.png",
+    "obrazy/skalowane/1280x720.png",
+    "obrazy/skalowane/1920x1080.png",
+    "obrazy/skalowane/2731x1536.png",
+    "obrazy/skalowane/3840x2160.png",
+    "obrazy/skalowane/6400x3600.png",
+    "obrazy/skalowane/7680x4320.png",
+    "obrazy/skalowane/10240x5760.png"
+  ],
+  "masks": [
+    "sobel3",
+    "sobel7"
+  ],
+  "warmup": 2,
+  "repeats": 11,
+  "shuffle": 206
+}

@@ -1,0 +1,215 @@
+{
+    "cases_done": 160,
+    "cases_planned": 160,
+    "command_line": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/implementacja/build/edge_bench --experiment /home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/eksperymenty/E13_rozmiar.json --out /home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/wyniki/E13_rozmiar --force",
+    "complete": true,
+    "correctness_failures": 0,
+    "description": "Rozmiar danych wejściowych: 14 rozmiarów 16:9 (0,04–59 Mpix) + kontrola proporcji; W1–W5; Sobel 3x3 i 7x7.",
+    "experiment": "E13_rozmiar",
+    "experiment_file": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych/analiza/eksperymenty/E13_rozmiar.json",
+    "finished": "2026-11-09T19:51:48",
+    "git": "6a0e7c2-dirty",
+    "images": [
+        {
+            "height": 144,
+            "sha256": "052978e63317f6c38da3974e42acdd91cd7c879fb91579bfb80498a69231be60",
+            "source": "obrazy/skalowane/256x144.png",
+            "width": 256
+        },
+        {
+            "height": 240,
+            "sha256": "65be96376d8906b3c93bb645e22d214e773caa2d3b5bdc416e1ab3efff13b724",
+            "source": "obrazy/skalowane/426x240.png",
+            "width": 426
+        },
+        {
+            "height": 360,
+            "sha256": "0ad314031d7e8b63e92738fe8c7c670d0dfe6e945b7497a694064251a07a95b7",
+            "source": "obrazy/skalowane/640x360.png",
+            "width": 640
+        },
+        {
+            "height": 540,
+            "sha256": "3596c0d2934a9f4628619a7356ab57f2b20d51aebd1bceae1bf232e18151045e",
+            "source": "obrazy/skalowane/960x540.png",
+            "width": 960
+        },
+        {
+            "height": 720,
+            "sha256": "49e1fd5d8920af03d9ad6296c9ada366767816394a82e8b8e6cd7cd9de89bb29",
+            "source": "obrazy/skalowane/1280x720.png",
+            "width": 1280
+        },
+        {
+            "height": 1080,
+            "sha256": "32207c5ef0f8436912fe0cf478f9dac653a343b4fb985dcdfe0b4594b4edcedd",
+            "source": "obrazy/skalowane/1920x1080.png",
+            "width": 1920
+        },
+        {
+            "height": 1440,
+            "sha256": "8749bf5553eaf96c4115507903265f4d640a120e09a0cc063a866182cdee01bb",
+            "source": "obrazy/skalowane/2560x1440.png",
+            "width": 2560
+        },
+        {
+            "height": 1536,
+            "sha256": "1c484f5890b928d8609214980948732cfb7386cbad2d78c1fd66beacbd7c3b37",
+            "source": "obrazy/skalowane/2731x1536.png",
+            "width": 2731
+        },
+        {
+            "height": 1800,
+            "sha256": "4801f774ee9b8eb6d13e206424eb237c7fed30dea56b0744d10b0350c7b1ca87",
+            "source": "obrazy/skalowane/3200x1800.png",
+            "width": 3200
+        },
+        {
+            "height": 2160,
+            "sha256": "9e40a5024b80b522af158c6133bf81dc8d9719d0e657e30bdba6f3f8b091912c",
+            "source": "obrazy/skalowane/3840x2160.png",
+            "width": 3840
+        },
+        {
+            "height": 2880,
+            "sha256": "2a0e4418ceac3f265a4ed989bd05d74a0b49b5893274df49e771ea4bb8d0e107",
+            "source": "obrazy/skalowane/5120x2880.png",
+            "width": 5120
+        },
+        {
+            "height": 3600,
+            "sha256": "57bf05a31eb151fceb6e09f94261e1e7f991806b2c8b053d34dae24d8c2814e8",
+            "source": "obrazy/skalowane/6400x3600.png",
+            "width": 6400
+        },
+        {
+            "height": 4320,
+            "sha256": "d4a9b951cfbed7c49f7b97a6ebb941ecde125732aec20a92f621f433d222cc3c",
+            "source": "obrazy/skalowane/7680x4320.png",
+            "width": 7680
+        },
+        {
+            "height": 5760,
+            "sha256": "130915ab15637f493b9308e4d0ae24d094659d36f951d0d77eddc457ce31bc28",
+            "source": "obrazy/skalowane/10240x5760.png",
+            "width": 10240
+        },
+        {
+            "height": 2048,
+            "sha256": "da1b0f2f3a993f8d83e223c8a0994108bf683df1b684da005ac276003922e1e3",
+            "source": "obrazy/skalowane/2048x2048.png",
+            "width": 2048
+        },
+        {
+            "height": 256,
+            "sha256": "28e7292910814c4e1725722fae5672187cd4205794a32644d9c7de35b5adfe63",
+            "source": "obrazy/skalowane/16384x256.png",
+            "width": 16384
+        }
+    ],
+    "interrupted": false,
+    "peak_ram_mb": 830.88671875,
+    "rows": 2400,
+    "spec": {
+        "affinities": [
+            "none"
+        ],
+        "chunks": [
+            16
+        ],
+        "gpu_ppws": [
+            1
+        ],
+        "gpu_precisions": [
+            "auto"
+        ],
+        "gpu_workgroups": [
+            "16x16"
+        ],
+        "images": [
+            "obrazy/skalowane/256x144.png",
+            "obrazy/skalowane/426x240.png",
+            "obrazy/skalowane/640x360.png",
+            "obrazy/skalowane/960x540.png",
+            "obrazy/skalowane/1280x720.png",
+            "obrazy/skalowane/1920x1080.png",
+            "obrazy/skalowane/2560x1440.png",
+            "obrazy/skalowane/2731x1536.png",
+            "obrazy/skalowane/3200x1800.png",
+            "obrazy/skalowane/3840x2160.png",
+            "obrazy/skalowane/5120x2880.png",
+            "obrazy/skalowane/6400x3600.png",
+            "obrazy/skalowane/7680x4320.png",
+            "obrazy/skalowane/10240x5760.png",
+            "obrazy/skalowane/2048x2048.png",
+            "obrazy/skalowane/16384x256.png"
+        ],
+        "include_io": false,
+        "kernels": [
+            "V0"
+        ],
+        "masks": [
+            "sobel3",
+            "sobel7"
+        ],
+        "mechs": [
+            "pool"
+        ],
+        "name": "E13_rozmiar",
+        "norms": [
+            "l2"
+        ],
+        "reduces": [
+            "local"
+        ],
+        "repeats": 15,
+        "save_images": false,
+        "scalings": [
+            "global"
+        ],
+        "schedules": [
+            "dynamic"
+        ],
+        "shuffle": 213,
+        "strict": false,
+        "threads": [
+            24
+        ],
+        "variants": [
+            "W1",
+            "W2",
+            "W3",
+            "W4",
+            "W5"
+        ],
+        "warmup": 2
+    },
+    "started": "2026-11-09T19:48:26",
+    "system": {
+        "build_type": "Release",
+        "compiler": "gcc 13.3.0",
+        "cpu_model": "AMD Ryzen 9 9900X 12-Core Processor",
+        "cxx_flags": "-Wall -Wextra -O3 -DNDEBUG",
+        "governor": "performance",
+        "hostname": "karol-pc-MS-7D75",
+        "kernel": "7.0.0-42-generic",
+        "logical_cpus": 24,
+        "opencl_compiled": true,
+        "os": "Ubuntu 24.04.5 LTS",
+        "qt_version": "6.12.0",
+        "simd": "sse4_2,avx,avx2,fma,avx512f,avx512bw",
+        "topology": "24 CPU, 12 rdzeni, 2 grupy L3"
+    },
+    "variants_run": [
+        "W1",
+        "W2",
+        "W3",
+        "W4",
+        "W5"
+    ],
+    "variants_skipped": [
+    ],
+    "warnings": [
+    ],
+    "working_dir": "/home/karol-pc/Desktop/sem7/zarzadzanie_w_systemach_i_sieciach_komputerowych"
+}

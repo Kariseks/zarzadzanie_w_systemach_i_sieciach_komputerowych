@@ -1,0 +1,36 @@
+{
+  "name": "E4_harmonogramy",
+  "description": "Harmonogramy x rozmiar fragmentu: static/cyclic/dynamic/guided, chunk 1–256 wierszy, 12 i 24 wątki, jądra V0 i V6. Obraz 4K.",
+  "variants": [
+    "T"
+  ],
+  "kernels": [
+    "V0",
+    "V6"
+  ],
+  "images": [
+    "obrazy/skalowane/3840x2160.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "threads": [
+    12,
+    24
+  ],
+  "schedules": "all",
+  "chunks": [
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    128,
+    256
+  ],
+  "warmup": 1,
+  "repeats": 15,
+  "shuffle": 104
+}

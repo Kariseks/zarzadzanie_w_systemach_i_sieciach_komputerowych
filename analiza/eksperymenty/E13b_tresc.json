@@ -1,0 +1,28 @@
+{
+  "name": "E13b_tresc",
+  "description": "Kontrola: zdjęcie i obraz syntetyczny tego samego rozmiaru – czas nie powinien zależeć od treści obrazu.",
+  "variants": [
+    "W1",
+    "W3",
+    "W4"
+  ],
+  "threads": "max",
+  "schedules": [
+    "dynamic"
+  ],
+  "chunks": [
+    16
+  ],
+  "images": [
+    "synthetic:1920x1080:1",
+    "synthetic:3840x2160:1",
+    "obrazy/skalowane/1920x1080.png",
+    "obrazy/skalowane/3840x2160.png"
+  ],
+  "masks": [
+    "sobel3"
+  ],
+  "warmup": 2,
+  "repeats": 15,
+  "shuffle": 214
+}
