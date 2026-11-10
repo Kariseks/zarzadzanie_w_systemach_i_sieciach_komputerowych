@@ -1,0 +1,12 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource prefix="/pomoc">
+        <file>pomoc.html</file>
+    </qresource>
+    <qresource prefix="/styl">
+        <file>styl.qss</file>
+    </qresource>
+    <qresource prefix="/ikony">
+        <file>ikona.svg</file>
+    </qresource>
+</RCC>

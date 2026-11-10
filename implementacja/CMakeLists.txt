@@ -29,6 +29,14 @@ else()
     message(WARNING "Nie znaleziono Qt6 Core – edge_bench nie zostanie zbudowany")
 endif()
 
+# edge_gui – aplikacja okienkowa do prezentacji (Qt 6 Widgets + Charts + Concurrent)
+find_package(Qt6 COMPONENTS Widgets Charts Concurrent Svg QUIET)
+if(Qt6Widgets_FOUND AND Qt6Charts_FOUND AND Qt6Concurrent_FOUND)
+    add_subdirectory(gui)
+else()
+    message(WARNING "Brak Qt6 Widgets/Charts/Concurrent – edge_gui nie zostanie zbudowany")
+endif()
+
 # Testy poprawnosci: ctest --test-dir build   (szybki zestaw domyslny)
 enable_testing()
 # Pelna weryfikacja (wszystkie jadra, ok. 90 s): edge_cli --verify

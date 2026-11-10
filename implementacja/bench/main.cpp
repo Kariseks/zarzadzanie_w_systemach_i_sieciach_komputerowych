@@ -47,9 +47,6 @@
 #ifndef EDGE_CXX_FLAGS
 #define EDGE_CXX_FLAGS ""
 #endif
-#ifndef EDGE_SOURCE_DIR
-#define EDGE_SOURCE_DIR "."
-#endif
 
 namespace {
 
@@ -127,7 +124,8 @@ QString governor()
 QString gitDescribe()
 {
     QProcess p;
-    p.start("git", { "-C", EDGE_SOURCE_DIR, "describe", "--always", "--dirty", "--tags" });
+    // git szuka repozytorium w górę od katalogu programu – bez wkompilowanej ścieżki (folder przenośny)
+    p.start("git", { "-C", QCoreApplication::applicationDirPath(), "describe", "--always", "--dirty", "--tags" });
     if (!p.waitForFinished(3000) || p.exitCode() != 0) return "unknown";
     return QString::fromUtf8(p.readAllStandardOutput()).trimmed();
 }

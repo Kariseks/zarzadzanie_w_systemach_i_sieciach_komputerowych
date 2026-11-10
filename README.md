@@ -8,7 +8,7 @@ z wykorzystaniem operatorów gradientowych**
 Projekt z przedmiotu *Zarządzanie w systemach i sieciach komputerowych* · Politechnika Wrocławska, W4N, semestr 7, 2026
 
 ![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
-![Qt 6](https://img.shields.io/badge/Qt-6-41CD52?logo=qt&logoColor=white)
+![Qt 6](https://img.shields.io/badge/Qt-6%20Widgets%20%2B%20Charts-41CD52?logo=qt&logoColor=white)
 ![OpenCL](https://img.shields.io/badge/OpenCL-1.2-ED1C24)
 ![AVX2](https://img.shields.io/badge/SIMD-AVX2-0071C5?logo=intel&logoColor=white)
 ![CMake](https://img.shields.io/badge/CMake-Ninja-064F8C?logo=cmake&logoColor=white)
@@ -181,6 +181,7 @@ flowchart LR
 │   │   └── <a href="implementacja/core/filter.h">filter.h</a>               moduł gradientu i skalowanie (wspólne dla wszystkich wersji)
 │   ├── <a href="implementacja/bench/main.cpp">bench/</a>                     edge_bench – aplikacja pomiarowa (Qt 6 Core)
 │   ├── <a href="implementacja/cli/main.cpp">cli/</a>                       edge_cli – próby ręczne i weryfikacja
+│   ├── <a href="implementacja/gui/">gui/</a>                       edge_gui – aplikacja okienkowa do prezentacji (Qt Widgets + Charts)
 │   └── <a href="implementacja/ai/PROMPT.md">ai/</a>                        procedura wariantu od AI
 ├── <a href="analiza/">analiza/</a>                       Python: pomiary, przetwarzanie, rysunki
 │   ├── <a href="analiza/eksperymenty/">eksperymenty/</a>              16 eksperymentów (JSON), E0–E14
@@ -199,6 +200,7 @@ flowchart LR
 ├── <a href="materialy/">materialy/</a>                     materiały prowadzącego – opis każdego pliku w <a href="materialy/INDEKS.md">INDEKS.md</a>
 │   ├── <a href="materialy/projekt/">projekt/</a>                   wymagania, wzory założeń i strony tytułowej, terminy
 │   └── <a href="materialy/wyklady/">wyklady/</a>                   wykłady ZSK_1–7, pytania zaliczeniowe
+├── <a href="uruchom_aplikacje.sh">uruchom_aplikacje.sh</a>           kompilacja (jeśli trzeba) i uruchomienie aplikacji edge_gui
 └── <a href="docs/img/">docs/img/</a>                      rysunki PNG do tego pliku (generowane przez przetworz.py)
 </pre>
 
@@ -211,7 +213,7 @@ flowchart LR
 | Linux | Ubuntu 24.04 | topologia CPU czytana z `/sys`, przypinanie wątków przez `pthread_setaffinity_np` |
 | GCC | 13 | C++17, OpenMP |
 | CMake + Ninja | 3.x | |
-| Qt | 6 (moduł Core) | tylko do `edge_bench` |
+| Qt | 6 (Core, Widgets, Charts, Concurrent, Svg) | `edge_bench` (Core) i aplikacja `edge_gui` |
 | OpenCL | 1.2+ | opcjonalnie – bez niego W5 jest pomijana (`ocl-icd-opencl-dev`) |
 | Python | 3.12 | pakiety w [`analiza/requirements.txt`](analiza/requirements.txt) |
 | LaTeX | pdflatex | do kompilacji dokumentów |
@@ -239,6 +241,25 @@ cmake --build implementacja/build
 ```bash
 ./implementacja/build/edge_cli --verify -v W1,W2,W3,W4,W5
 ```
+
+### Aplikacja do prezentacji
+
+```bash
+./uruchom_aplikacje.sh
+```
+
+Skrypt przy pierwszym uruchomieniu konfiguruje i kompiluje projekt (Release, `implementacja/build`), później tylko
+dokompilowuje zmiany i uruchamia `edge_gui`. Wszystkie ścieżki są względne, więc folder projektu można przenieść
+na inny komputer (Qt w innym miejscu niż `~/Qt`: `QT_DIR=/sciezka/do/qt/gcc_64 ./uruchom_aplikacje.sh`).
+
+Pięć zakładek: **Przetwarzanie** (obraz wejściowy i wynik obok siebie, pasek czasu wczytanie / algorytm / zapis
+i etapy algorytmu), **Porównanie wersji** (W1–W5 na wykresach Qt Charts), **Skalowanie wątków** (S(N), E(N),
+krzywa Amdahla na żywo, linie odniesienia z topologii procesora), **Historia pomiarów** (każdy pomiar z rozrzutem,
+CV i warunkami – zasilanie, profil, regulator – eksport do CSV) oraz **System i poprawność** (mapa rdzeni,
+warunki pomiaru, weryfikacja W1–W5). Aplikacja dopasowuje się do sprzętu (liczba wątków, brak GPU, brak plików
+obrazów → obrazy syntetyczne) i do ekranów HiDPI, np. laptopa 2560×1600.
+Lista **Gotowe ustawienia** na pasku narzędzi jednym kliknięciem pokazuje konkretne zjawisko. Pomoc: F1,
+„Co to jest?”: Shift+F1.
 
 ### Pełne pomiary i sprawozdanie
 

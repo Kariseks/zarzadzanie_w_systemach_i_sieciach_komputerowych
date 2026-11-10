@@ -1,0 +1,63 @@
+/* Arkusz stylów edge_gui – jasny, spokojny wygląd czytelny na rzutniku. */
+
+QMainWindow, QDialog { background: #f5f6f8; }
+
+QTabWidget::pane { border: none; }
+QTabBar::tab {
+    padding: 8px 18px; margin-right: 2px;
+    border: 1px solid #d5dae1; border-bottom: none;
+    border-top-left-radius: 6px; border-top-right-radius: 6px;
+    background: #e9ecf1; color: #3e4c59;
+}
+QTabBar::tab:selected { background: #ffffff; color: #0b3c5d; font-weight: bold; }
+QTabBar::tab:hover:!selected { background: #f2f4f7; }
+
+QGroupBox {
+    font-weight: bold; color: #243b53;
+    border: 1px solid #d5dae1; border-radius: 8px;
+    margin-top: 14px; padding: 10px 8px 8px 8px; background: #ffffff;
+}
+QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 4px; }
+QGroupBox QLabel, QGroupBox QCheckBox, QGroupBox QRadioButton { font-weight: normal; }
+
+QPushButton {
+    padding: 6px 14px; border-radius: 6px;
+    border: 1px solid #c3cad3; background: #ffffff;
+}
+QPushButton:hover { background: #f0f4f8; }
+QPushButton:disabled { color: #9aa5b1; background: #f1f3f5; }
+QPushButton#glowny, QToolButton#uruchomGotowe {
+    background: #0072B2; color: white; border: none; font-weight: bold; padding: 8px 16px;
+}
+QPushButton#glowny:hover, QToolButton#uruchomGotowe:hover { background: #005f94; }
+QPushButton#glowny:disabled { background: #a9c6dc; }
+QToolButton#uruchomGotowe { border-radius: 6px; margin-left: 6px; }
+
+QComboBox { padding: 3px 6px; border: 1px solid #c3cad3; border-radius: 5px; background: white; min-height: 22px; }
+QComboBox:focus { border-color: #0072B2; }
+QSpinBox { min-height: 24px; }
+
+QProgressBar { border: 1px solid #c3cad3; border-radius: 5px; text-align: center; background: #ffffff; min-height: 20px; }
+QProgressBar::chunk { background: #56B4E9; border-radius: 4px; }
+
+QLabel#podpowiedz { color: #52606d; }
+QLabel#duzaLiczba { font-size: 30pt; font-weight: bold; }
+QLabel#srednieLiczby { font-size: 13pt; font-weight: bold; color: #243b53; }
+QLabel#odznaka { padding: 4px 10px; border-radius: 10px; font-weight: bold; }
+QLabel#odznaka[stan="ok"] { background: #e3f4e8; color: #1b7f3b; }
+QLabel#odznaka[stan="blad"] { background: #fde8e8; color: #b71c1c; }
+QLabel#stanPomiaru { color: #1b7f3b; padding: 0 8px; }
+QLabel#stanPomiaru[zajety="true"] { color: #b26a00; font-weight: bold; }
+QLabel#stanWarunkow { padding: 0 8px; color: #1b7f3b; }
+QLabel#stanWarunkow[zle="true"] { color: #b26a00; font-weight: bold; }
+
+QWidget#panelWynikow { background: #ffffff; border: 1px solid #d5dae1; border-radius: 8px; }
+
+QTableWidget, QTreeWidget { border: 1px solid #d5dae1; border-radius: 6px; gridline-color: #e4e7eb; background: white; }
+QHeaderView::section { background: #eef1f5; padding: 5px; border: none; border-right: 1px solid #d5dae1; font-weight: bold; }
+
+QToolBar#pasekGotowych { background: #ffffff; border-bottom: 1px solid #d5dae1; padding: 4px; spacing: 6px; }
+QStatusBar { background: #ffffff; border-top: 1px solid #d5dae1; }
+QToolTip { border: 1px solid #c3cad3; padding: 6px; }
+QSplitter::handle { background: #e4e7eb; }
+QSplitter::handle:hover { background: #56B4E9; }

@@ -669,6 +669,77 @@ def e3(ex: Eksperyment, out: Wyjscie) -> None:
     legenda_pod(fig, ax1, ncol=3)
     out.zapisz_rys(fig, "e3_skalowanie", "E3")
     out.zapisz_tab("e3_watki", tabela(["Obraz", "T(1) [ms]", "S(12)", "S(24)", "maks. S (N)", "s [\\%]"], wiersze))
+    _e3_etapy(ex, out)
+
+
+def _e3_etapy(ex: Eksperyment, out: Wyjscie) -> None:
+    """W4: rozkład czasu na splot / skalowanie / część sekwencyjną w funkcji N – dlaczego S(N) < N.
+
+    Porównanie w obrębie tej samej wersji (W4 na 1 i na N wątkach), więc każdy etap ma własne
+    przyspieszenie: splot (obliczenia) skaluje się prawie liniowo, skalowanie 0–255 (czysty ruch
+    danych) ogranicza przepustowość pamięci, a przydział i zerowanie buforów (jeden wątek) się nie skraca.
+    """
+    r = ex.res.copy()
+    g = r.groupby(["image", "threads", "width"])[["wall_ms", "conv_ms", "normalize_ms", "imbalance_ms"]].median().reset_index()
+    g["pozost"] = (g["wall_ms"] - g["conv_ms"] - g["normalize_ms"]).clip(lower=0)
+    obr = list(dict.fromkeys(g.sort_values("width")["image"]))
+    nn_rys = [n for n in (1, 2, 4, 6, 8, 12, 16, 24) if n in set(g["threads"])]
+    rys = [o for o in obr if ("3840x2160" in o or "7680x4320" in o)]
+    if rys:
+        fig, osie = pionowo(len(rys), 4.4 * CM)
+        kol = STYL_W["W4"]["color"]
+        for ax, o in zip(osie, rys):
+            d = g[g["image"] == o].set_index("threads").reindex(nn_rys)
+            # udziały (100 %), bo czas maleje 5–10× – na skali bezwzględnej nie widać rosnącego udziału części sekwencyjnej
+            x = np.arange(len(nn_rys))
+            razem = (d["conv_ms"] + d["normalize_ms"] + d["pozost"]).to_numpy()
+            dol = np.zeros(len(nn_rys))
+            for kolumna, nazwa, c, h in [("conv_ms", "splot i moduł (obliczenia)", kol, ""),
+                                          ("normalize_ms", "skalowanie 0–255 (ruch danych)", "#F0B48C", "//"),
+                                          ("pozost", "przydział i zerowanie buforów, synchronizacja (jeden wątek)", "#BDBDBD", "..")]:
+                v = 100 * d[kolumna].to_numpy() / razem
+                ax.bar(x, v, 0.7, bottom=dol, color=c, hatch=h, edgecolor="white", linewidth=0.4, label=nazwa)
+                for xi, vi, di in zip(x, v, dol):
+                    if vi >= 9:
+                        ax.text(xi, di + vi / 2, f"{liczba(vi, 0)}%", ha="center", va="center",
+                                fontsize=plt.rcParams["legend.fontsize"] * 0.9, color="white" if c == kol else "black")
+                dol += v
+            for xi, tot in zip(x, d["wall_ms"].to_numpy()):
+                ax.text(xi, 101.5, f"{liczba(tot)} ms", ha="center", va="bottom", fontsize=plt.rcParams["legend.fontsize"] * 0.9)
+            ax.set_xticks(x, [str(n) for n in nn_rys])
+            ax.set_ylabel("udział w czasie [%]")
+            ax.set_ylim(0, 112)
+            ax.set_yticks([0, 25, 50, 75, 100])
+            ax.grid(axis="x", visible=False)
+            tytul_panelu(ax, etykieta_obrazu(o))
+            os_przecinek(ax, os_x=False)
+        osie[-1].set_xlabel("liczba wątków N")
+        fig.tight_layout(h_pad=0.6)
+        legenda_pod(fig, osie[0], ncol=2)
+        out.zapisz_rys(fig, "e3_rozklad", "E3")
+    for o in obr:
+        d = g[g["image"] == o].set_index("threads")
+        if 1 not in d.index:
+            continue
+        ko = klucz_obrazu(o)
+        t1 = d.loc[1]
+        out.m(f"e3/{ko}/splot-t1", t1["conv_ms"])
+        out.m(f"e3/{ko}/skal-t1", t1["normalize_ms"])
+        out.m(f"e3/{ko}/pozost-t1", t1["pozost"])
+        out.m(f"e3/{ko}/udzial-pozost-t1", 100 * t1["pozost"] / t1["wall_ms"], 1)
+        for n in (4, 12, 24):
+            if n not in d.index:
+                continue
+            x = d.loc[n]
+            out.m(f"e3/{ko}/splot-t{n}", x["conv_ms"])
+            out.m(f"e3/{ko}/skal-t{n}", x["normalize_ms"])
+            out.m(f"e3/{ko}/pozost-t{n}", x["pozost"])
+            out.m(f"e3/{ko}/imb-t{n}", x["imbalance_ms"])
+            out.m(f"e3/{ko}/S-splot{n}", t1["conv_ms"] / x["conv_ms"])
+            out.m(f"e3/{ko}/S-skal{n}", t1["normalize_ms"] / x["normalize_ms"])
+            out.m(f"e3/{ko}/udzial-pozost-t{n}", 100 * x["pozost"] / x["wall_ms"], 0)
+        sk = d["normalize_ms"]
+        out.m(f"e3/{ko}/S-skal-max", t1["normalize_ms"] / sk.min())
 
 
 def e4(ex: Eksperyment, out: Wyjscie) -> None:

@@ -1,0 +1,171 @@
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: sans-serif; color: #1f2933; }
+  h1 { color: #0b3c5d; }
+  h2 { color: #0b3c5d; border-bottom: 1px solid #d5dae1; padding-bottom: 3px; margin-top: 22px; }
+  h3 { color: #243b53; }
+  table { border-collapse: collapse; }
+  td, th { border: 1px solid #d5dae1; padding: 4px 8px; vertical-align: top; }
+  th { background: #eef1f5; }
+  .uwaga { background: #fff8e1; border-left: 4px solid #E69F00; padding: 6px 10px; }
+  code { background: #eef1f5; }
+</style>
+</head>
+<body>
+
+<h1>Wykrywanie krawędzi – pomoc</h1>
+<p>Aplikacja pokazuje działanie i wydajność pięciu wersji programu wykrywającego krawędzie
+na obrazach cyfrowych operatorami gradientowymi (Sobel, Prewitt, Scharr, Roberts).
+Każda wersja W2–W5 to kod wersji sekwencyjnej W1 z <b>jednym</b> rodzajem przyspieszenia,
+więc widać wkład jednego mechanizmu, a nie sumę kilku.</p>
+
+<a name="spis"></a>
+<h2>Spis treści</h2>
+<ol>
+  <li><a href="#start">Szybki start</a></li>
+  <li><a href="#wersje">Pięć wersji programu</a></li>
+  <li><a href="#przetwarzanie">Zakładka Przetwarzanie</a></li>
+  <li><a href="#porownanie">Zakładka Porównanie wersji</a></li>
+  <li><a href="#skalowanie">Zakładka Skalowanie wątków</a></li>
+  <li><a href="#historia">Zakładka Historia pomiarów</a></li>
+  <li><a href="#system">Zakładka System i poprawność</a></li>
+  <li><a href="#gotowe">Gotowe ustawienia</a></li>
+  <li><a href="#czasy">Jak czytać czasy</a></li>
+  <li><a href="#pojecia">Pojęcia</a></li>
+  <li><a href="#skroty">Skróty klawiszowe</a></li>
+</ol>
+
+<a name="start"></a>
+<h2>1. Szybki start</h2>
+<ol>
+  <li>Na pasku narzędzi wybierz <b>Gotowe ustawienie</b>, np. „1. Pierwsze uruchomienie”.</li>
+  <li>Kliknij <b>Zastosuj i uruchom</b> – aplikacja przełączy zakładkę, ustawi parametry i zmierzy czas.</li>
+  <li>Najedź myszą na dowolny element, żeby zobaczyć podpowiedź. <b>Shift+F1</b> („Co to jest?”) i kliknięcie elementu
+      pokazuje dłuższy opis. <b>F1</b> otwiera tę pomoc na rozdziale bieżącej zakładki.</li>
+</ol>
+<p class="uwaga">Przed pomiarem zamknij inne programy (przeglądarkę, kompilację). Działający w tle program zabiera rdzenie
+i pamięć podręczną, więc czasy będą dłuższe i bardziej rozrzucone. <b>Na laptopie</b> podłącz zasilacz i ustaw profil
+„performance” – na baterii procesor ma niższy limit mocy i czasy potrafią wzrosnąć nawet dwukrotnie. Kilka pierwszych
+pomiarów potraktuj jako rozgrzewkę. Stan zasilania pokazuje pasek stanu (🔌 / 🔋).</p>
+
+<a name="wersje"></a>
+<h2>2. Pięć wersji programu</h2>
+<table>
+<tr><th>Wersja</th><th>Rodzaj przyspieszenia</th><th>Co zmienia względem W1</th></tr>
+<tr><td><b>W1</b></td><td>brak – punkt odniesienia</td><td>splot 2D wprost, obcinanie współrzędnych przy każdym odczycie, maska odczytywana z tablicy, bufory przydzielane przy każdym wywołaniu</td></tr>
+<tr><td><b>W2</b></td><td>algorytm i pamięć, 1 rdzeń</td><td>brzegi poza główną pętlą, maska jako stała kompilacji, splot rozdzielny (4k zamiast 2k² operacji), bufory <code>int16</code> używane wielokrotnie</td></tr>
+<tr><td><b>W3</b></td><td>SIMD, 1 rdzeń</td><td>ten sam algorytm co W1, instrukcje AVX2 liczą 8 pikseli naraz</td></tr>
+<tr><td><b>W4</b></td><td>wątki CPU</td><td>jądro W1, obraz dzielony na fragmenty wierszy pomiędzy N wątków; pula wątków i scheduler</td></tr>
+<tr><td><b>W5</b></td><td>karta graficzna</td><td>kernel OpenCL, jeden wątek GPU liczy jeden lub kilka pikseli; czas obejmuje przesył przez PCIe</td></tr>
+</table>
+<p>Wszystkie wersje dają wynik <b>identyczny co do bitu</b> z W1 – sprawdza to zakładka <a href="#system">System i poprawność</a>.</p>
+
+<a name="przetwarzanie"></a>
+<h2>3. Zakładka Przetwarzanie</h2>
+<p>Uruchamia jedną wersję na wybranym obrazie.</p>
+<h3>Ustawienia (lewa kolumna)</h3>
+<ul>
+  <li><b>Obraz</b> – obrazy testowe projektu (Kodak, HD, 4K, 8K, obrazy syntetyczne) albo dowolny plik („Inny plik…”, Ctrl+O).</li>
+  <li><b>Maska</b> – większa maska mocniej wygładza (lepiej znosi szum), ale wymaga więcej obliczeń.</li>
+  <li><b>Wersja programu</b> – W1–W5; wersja niedostępna na tym komputerze jest wyszarzona (podpowiedź podaje powód).</li>
+  <li><b>Parametry wersji</b> – tylko dla W4 (wątki, harmonogram, fragment, sposób wyznaczania maksimum, mechanizm, przypisanie do rdzeni) i W5 (grupa robocza, piksele na wątek, precyzja).</li>
+  <li><b>Pomiar</b> – liczba powtórzeń (wynik to mediana) i czy mierzyć też wczytanie i zapis pliku.</li>
+</ul>
+<h3>Wyniki</h3>
+<ul>
+  <li><b>Wejście i wynik</b> – obrazy obok siebie; kółko myszy powiększa oba naraz, przeciąganie przesuwa, dwuklik dopasowuje.</li>
+  <li><b>Duża liczba</b> – mediana czasu samego algorytmu, w kolorze wersji; pod nią przyspieszenie względem W1 i zgodność wyniku z W1.</li>
+  <li><b>Pasek „Cały program”</b> – podział czasu na <i>wczytanie</i>, <i>algorytm</i> i <i>zapis</i>. Najedź na odcinek, żeby zobaczyć dokładną wartość.</li>
+  <li><b>Pasek „Etapy samego algorytmu”</b> – splot i moduł, skalowanie do 0–255 i pozostałe (przydział buforów, synchronizacja); dla W5 – przesył na kartę, obliczenia, przesył z karty i sterowanie.</li>
+</ul>
+<p>Przyspieszenie względem W1 wymaga czasu W1 dla tego samego obrazu i maski – aplikacja mierzy go raz, automatycznie, przed pierwszym pomiarem innej wersji.</p>
+
+<a name="porownanie"></a>
+<h2>4. Zakładka Porównanie wersji</h2>
+<p>Mierzy zaznaczone wersje po kolei na tym samym obrazie. Wyniki pojawiają się po każdej wersji.</p>
+<ul>
+  <li><b>Lewy wykres</b> – czas samego algorytmu; pod nazwą wersji czas i przyspieszenie względem W1.</li>
+  <li><b>Prawy wykres</b> – cały program: wczytanie, algorytm, zapis. Wczytanie i zapis są takie same dla każdej wersji,
+      więc przy szybkim algorytmie dominują – to <a href="#pojecia">prawo Amdahla</a> w praktyce.</li>
+  <li><b>Tabela</b> – mediany, rozrzut (min–maks) i przyspieszenia; eksport: Plik → Eksportuj porównanie do CSV.</li>
+</ul>
+<p>Prawy przycisk myszy na wykresie – zapis wykresu do PNG.</p>
+
+<a name="skalowanie"></a>
+<h2>5. Zakładka Skalowanie wątków</h2>
+<p>Mierzy W4 dla rosnącej liczby wątków (1, 2, 3, 4, 6, 8, … do maksimum) i rysuje:</p>
+<ul>
+  <li><b>przyspieszenie S(N) = T(1)/T(N)</b> z linią idealną S = N i krzywą prawa Amdahla dopasowaną do pomiarów;</li>
+  <li><b>efektywność E(N) = S(N)/N</b> – jaka część mocy N wątków jest wykorzystana.</li>
+</ul>
+<p>Pionowe linie odniesienia są wyliczane z procesora, na którym działa aplikacja: liczba rdzeni jednego bloku L3
+(gdy bloków jest kilka, np. 6 na komputerze z Ryzen 9 9900X), wszystkie rdzenie fizyczne i wszystkie wątki sprzętowe.
+Powyżej liczby rdzeni fizycznych drugi wątek sprzętowy (SMT) współdzieli rdzeń, więc zysk jest mały.</p>
+
+<a name="historia"></a>
+<h2>Zakładka Historia pomiarów</h2>
+<p>Każdy pomiar z każdej zakładki trafia do tabeli razem z parametrami, medianą, rozrzutem (min–maks),
+<b>współczynnikiem zmienności CV</b> i <b>warunkami pomiaru</b> (zasilanie, profil, regulator, zajętość CPU).
+Pomiary z CV powyżej 5 % i wykonane w złych warunkach są oznaczone ⚠. <b>Eksportuj do CSV</b> (Ctrl+Shift+E)
+zapisuje całą sesję – wygodne do serii szybkich testów i porównań bez przepisywania liczb.</p>
+
+<a name="system"></a>
+<h2>6. Zakładka System i poprawność</h2>
+<ul>
+  <li><b>Sprzęt</b> – procesor, karta graficzna, system; <b>mapa rdzeni</b> pokazuje bloki CCD, rdzenie i ich wątki sprzętowe.</li>
+  <li><b>Warunki pomiaru</b> – regulator częstotliwości (zalecany <code>performance</code>) i zajętość procesora przez inne programy.</li>
+  <li><b>Sprawdź poprawność</b> – porównuje wynik W2–W5 z W1 piksel po pikselu na obrazach z przypadkami brzegowymi
+      (1×1, jedna kolumna, obraz mniejszy od maski, mniej wierszy niż wątków) i dla wielu konfiguracji wątków i GPU.</li>
+</ul>
+
+<a name="gotowe"></a>
+<h2>7. Gotowe ustawienia</h2>
+<p>Lista na pasku narzędzi i menu <b>Gotowe ustawienia</b>. Każde ustawienie wybiera zakładkę, obraz, maskę, wersję i parametry,
+żeby jednym kliknięciem pokazać konkretne zjawisko: porównanie wersji, wpływ maski 7×7, skalowanie wątków, false sharing,
+koszt blokady, zły rozmiar fragmentu, kartę graficzną na obrazie 8K, szum. „Zastosuj i uruchom” od razu mierzy czas.</p>
+
+<a name="czasy"></a>
+<h2>8. Jak czytać czasy</h2>
+<ul>
+  <li><b>Sam algorytm</b> – od obrazu w pamięci do gotowego obrazu 0–255 (dla W5 z przesłaniem danych na kartę i z powrotem).</li>
+  <li><b>Cały program</b> – wczytanie i zdekodowanie pliku + algorytm + zapis wyniku do JPG.</li>
+  <li><b>Mediana</b> – środkowa wartość z powtórzeń; mniej wrażliwa niż średnia na pojedyncze pomiary wydłużone przez system.</li>
+  <li><b>Rozgrzewka</b> – jedno wywołanie przed pomiarem (przydział pamięci, inicjalizacja OpenCL) nie jest liczone.</li>
+  <li>Pomiar w aplikacji służy do pokazu. Wyniki w sprawozdaniu pochodzą z osobnego programu <code>edge_bench</code>
+      uruchamianego na wyciszonym komputerze, z 11–15 powtórzeniami.</li>
+</ul>
+
+<a name="pojecia"></a>
+<h2>9. Pojęcia</h2>
+<table>
+<tr><td><b>Prawo Amdahla</b></td><td>S(N) ≤ 1 / (s + (1 − s)/N), gdzie s – udział części sekwencyjnej. Przy dowolnej liczbie wątków przyspieszenie nie przekroczy 1/s.</td></tr>
+<tr><td><b>Część sekwencyjna</b></td><td>praca wykonywana jednym wątkiem: wczytanie i zapis pliku, przydział buforów, redukcja maksimum, przesył na kartę.</td></tr>
+<tr><td><b>SMT</b></td><td>dwa wątki sprzętowe na jednym rdzeniu fizycznym; współdzielą jednostki wykonawcze i pamięć L1/L2.</td></tr>
+<tr><td><b>CCD / blok L3</b></td><td>grupa rdzeni ze wspólną pamięcią podręczną L3 (Ryzen 9 9900X: 2 bloki po 6 rdzeni i 32 MB; Ryzen 5000H w laptopie: 1 blok 6–8 rdzeni i 16 MB).</td></tr>
+<tr><td><b>CV</b></td><td>współczynnik zmienności = odchylenie standardowe / średnia czasu; powyżej 5 % pomiar uznaje się za niestabilny.</td></tr>
+<tr><td><b>Harmonogram</b></td><td>sposób przydziału fragmentów wierszy do wątków: static, cyclic, dynamic, guided.</td></tr>
+<tr><td><b>False sharing</b></td><td>wątki zapisują różne zmienne leżące w tej samej linii pamięci podręcznej (64 B) – linia jest ciągle unieważniana w innych rdzeniach.</td></tr>
+<tr><td><b>SIMD / AVX2</b></td><td>jedna instrukcja procesora działa na 8 liczbach 32-bitowych naraz.</td></tr>
+<tr><td><b>Work-item, grupa robocza</b></td><td>wątek karty graficznej i grupa wątków współdzielących pamięć lokalną jednego multiprocesora.</td></tr>
+<tr><td><b>Splot rozdzielny</b></td><td>maska k×k zapisana jako iloczyn dwóch wektorów – dwa sploty 1D zamiast jednego 2D (4k zamiast 2k² operacji).</td></tr>
+</table>
+
+<a name="skroty"></a>
+<h2>10. Skróty klawiszowe</h2>
+<table>
+<tr><td><b>Ctrl+R</b></td><td>uruchom pomiar na bieżącej zakładce</td></tr>
+<tr><td><b>Esc</b></td><td>przerwij pomiar</td></tr>
+<tr><td><b>Ctrl+1 … Ctrl+5</b></td><td>przejdź do zakładki</td></tr>
+<tr><td><b>Ctrl+Shift+E</b></td><td>eksportuj historię pomiarów do CSV</td></tr>
+<tr><td><b>Ctrl+O</b></td><td>otwórz obraz</td></tr>
+<tr><td><b>Ctrl+S</b></td><td>zapisz wynik</td></tr>
+<tr><td><b>F1</b></td><td>pomoc dla bieżącej zakładki</td></tr>
+<tr><td><b>Shift+F1</b></td><td>„Co to jest?” – kliknij element, żeby zobaczyć opis</td></tr>
+<tr><td><b>F11</b></td><td>pełny ekran (rzutnik)</td></tr>
+<tr><td><b>Ctrl+Q</b></td><td>zakończ</td></tr>
+</table>
+
+</body>
+</html>
